@@ -195,6 +195,15 @@ class Tool {
   }
 
   /**
+   * 
+   * 
+   */
+  public up(mm: number){ this.move(this.location.x, this.location.y - mm) }
+  public down(mm: number){ this.move(this.location.x, this.location.y + mm) }
+  public left(mm: number){ this.move(this.location.x - mm, this.location.y) }
+  public right(mm: number){ this.move(this.location.x + mm, this.location.y) }
+
+  /**
    * Move the tool to the origin (top left) of a given canvas;
    */
   public toCanvas(c:Canvas){
@@ -233,7 +242,7 @@ class Tool {
     this.scaledLineFromVectors(this.location, nextLocation);
     
     // Update the current position
-    this.setCurrentPosition(nextLocation);
+    this.setCurrentPosition(nextLocation.setHeading(0));
   }
 
   /**
@@ -246,19 +255,19 @@ class Tool {
   }
 
   /**
-   * Set the dashes and colors for toolpath drawing
+   * Set the styles colors for toolpath drawing.
+   * 
+   * Dash styles here may get rekt when lines get segmented.
    */
   private setPathLineStyle(){
     // Set and apply the stroke weight + weight-dependent dash pattern
-    const weight = 4;
-    strokeWeight(weight);
-    // @ts-ignore TS doesn't know that we'll be in a canvas with a drawingContext,
-    drawingContext.setLineDash([weight*2, weight*3]);
     if (this.brushIntensity > 0) {
-      stroke(0, 255, 255)
+      strokeWeight(4);
+      stroke(0, 255, 255, 100)
       
     } else {
-      stroke(255, 0, 0)
+      strokeWeight(2);
+      stroke(255, 0, 0, 100)
     } 
   }
 

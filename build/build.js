@@ -135,6 +135,10 @@ class Tool {
             this.setTargetPosition(x, y);
         });
     }
+    up(mm) { this.move(this.location.x, this.location.y - mm); }
+    down(mm) { this.move(this.location.x, this.location.y + mm); }
+    left(mm) { this.move(this.location.x - mm, this.location.y); }
+    right(mm) { this.move(this.location.x + mm, this.location.y); }
     toCanvas(c) {
         this.move(c.x, c.y);
     }
@@ -151,21 +155,20 @@ class Tool {
         }
         this.setPathLineStyle();
         this.scaledLineFromVectors(this.location, nextLocation);
-        this.setCurrentPosition(nextLocation);
+        this.setCurrentPosition(nextLocation.setHeading(0));
     }
     scaledLineFromVectors(start, end) {
         scale(this.scale);
         line(start.x, start.y, end.x, end.y);
     }
     setPathLineStyle() {
-        const weight = 4;
-        strokeWeight(weight);
-        drawingContext.setLineDash([weight * 2, weight * 3]);
         if (this.brushIntensity > 0) {
-            stroke(0, 255, 255);
+            strokeWeight(4);
+            stroke(0, 255, 255, 100);
         }
         else {
-            stroke(255, 0, 0);
+            strokeWeight(2);
+            stroke(255, 0, 0, 100);
         }
     }
     run() {
@@ -210,8 +213,11 @@ function setup() {
     instructions();
 }
 function instructions() {
-    tool.penDown();
+    tool.penUp();
     tool.toCanvas(canvas);
+    tool.penDown();
+    tool.right(500);
+    tool.down(200);
 }
 function draw() {
     addPadding();

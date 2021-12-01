@@ -30,24 +30,11 @@ function setup() {
  */
 
 function instructions() {
-  tool.penDown();
-  // tool.move(100,160);
-  // tool.move(160,100);
-  // tool.move(80,50);
-  // tool.move(40,80);
-  // tool.move(40,200);
-  // tool.move(200,200);
-  // tool.penUp();
-  // tool.move(200,140);
+  tool.penUp();
   tool.toCanvas(canvas);
-  // tool.move(50,50);
-  // tool.penDown();
-  // tool.move(50,100);
-  // tool.penUp();
-  // tool.move(100,100);
-  // tool.move(100,200);
-  // tool.penDown();
-  // tool.move(200, 200);
+  tool.penDown();
+  tool.right(500);
+  tool.down(200);
 }
 
 function draw() {
