@@ -21,6 +21,9 @@ yarn start
 
 A local version will now be running on [localhost:3000](http://localhost:3000).
 
+## Inspiration / related resources
+[MIT on computational portraiture](https://courses.ideate.cmu.edu/15-104/f2016/week-9-due-oct-28/)
+
 
 ## Copyright and License
 
