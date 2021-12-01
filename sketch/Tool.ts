@@ -74,7 +74,13 @@ class Tool {
     this.maxStep = mm;
   }
 
-  
+  /**
+   * Tool vectors need to be scaled, but the P5 
+   * renderer deforms when scaled at drawtime,
+   * so the machine keeps track of the scale
+   * for use when plotting lines.
+   */
+  public scale: number = 1;
   // The tool's current location
   private location: p5.Vector = createVector(0,0);
   // The tool's destination
@@ -224,16 +230,18 @@ class Tool {
     }
 
     this.setPathLineStyle();
-    this.lineFromVectors(this.location, nextLocation);
+    this.scaledLineFromVectors(this.location, nextLocation);
     
     // Update the current position
     this.setCurrentPosition(nextLocation);
   }
 
   /**
-   * Sugar function to draw a line between two vectors
+   * Draw a line between two vectors, adjusting scale
+   * to account for window / renderer resizing.
    */
-  private lineFromVectors(start: p5.Vector, end: p5.Vector){
+  private scaledLineFromVectors(start: p5.Vector, end: p5.Vector){
+    scale(this.scale);
     line(start.x, start.y, end.x, end.y);
   }
 
@@ -242,10 +250,10 @@ class Tool {
    */
   private setPathLineStyle(){
     // Set and apply the stroke weight + weight-dependent dash pattern
-    const weight = 2;
+    const weight = 4;
     strokeWeight(weight);
     // @ts-ignore TS doesn't know that we'll be in a canvas with a drawingContext,
-    // drawingContext.setLineDash([weight*2, weight*3]);
+    drawingContext.setLineDash([weight*2, weight*3]);
     if (this.brushIntensity > 0) {
       stroke(0, 255, 255)
       

@@ -31,15 +31,15 @@ function setup() {
 
 function instructions() {
   tool.penDown();
-  tool.move(100,160);
-  tool.move(160,100);
-  tool.move(80,50);
-  tool.move(40,80);
-  tool.move(40,200);
-  tool.move(200,200);
+  // tool.move(100,160);
+  // tool.move(160,100);
+  // tool.move(80,50);
+  // tool.move(40,80);
+  // tool.move(40,200);
+  // tool.move(200,200);
   // tool.penUp();
   // tool.move(200,140);
-  // tool.toCanvas(canvas);
+  tool.toCanvas(canvas);
   // tool.move(50,50);
   // tool.penDown();
   // tool.move(50,100);
@@ -101,4 +101,5 @@ function scaleToWindow(){
   }
 
   scale(useScale, useScale);
+  tool.scale = useScale;
 }

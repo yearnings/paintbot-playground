@@ -73,6 +73,7 @@ class Tool {
             maxWidth: 10,
         };
         this.maxStep = 20;
+        this.scale = 1;
         this.location = createVector(0, 0);
         this.target = createVector(0, 0);
         this.onTarget = () => (this.location.toString() == this.target.toString());
@@ -149,15 +150,17 @@ class Tool {
             nextLocation = this.location.copy().add(forwardStep);
         }
         this.setPathLineStyle();
-        this.lineFromVectors(this.location, nextLocation);
+        this.scaledLineFromVectors(this.location, nextLocation);
         this.setCurrentPosition(nextLocation);
     }
-    lineFromVectors(start, end) {
+    scaledLineFromVectors(start, end) {
+        scale(this.scale);
         line(start.x, start.y, end.x, end.y);
     }
     setPathLineStyle() {
-        const weight = 2;
+        const weight = 4;
         strokeWeight(weight);
+        drawingContext.setLineDash([weight * 2, weight * 3]);
         if (this.brushIntensity > 0) {
             stroke(0, 255, 255);
         }
@@ -208,12 +211,7 @@ function setup() {
 }
 function instructions() {
     tool.penDown();
-    tool.move(100, 160);
-    tool.move(160, 100);
-    tool.move(80, 50);
-    tool.move(40, 80);
-    tool.move(40, 200);
-    tool.move(200, 200);
+    tool.toCanvas(canvas);
 }
 function draw() {
     addPadding();
@@ -246,5 +244,6 @@ function scaleToWindow() {
         useScale = Math.max(minScaleY, minScaleX);
     }
     scale(useScale, useScale);
+    tool.scale = useScale;
 }
 //# sourceMappingURL=build.js.map
