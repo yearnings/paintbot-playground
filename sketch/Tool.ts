@@ -1,4 +1,3 @@
-type Point = {x:number, y:number};
 /**
  * @param shape
  * A brush is either round (sizes correspond to diameter) or
