@@ -279,4 +279,13 @@ class Tool {
   private queue(arrowFn:QueuedFunction){
     this.actions.push(arrowFn);
   }
+
+  public reset(){
+    this.actions = [];
+    this.currentX = 0;
+    this.currentY = 0;
+    this.targetX = 0;
+    this.targetY = 0;
+    this.isMoving = false;
+  }
 }

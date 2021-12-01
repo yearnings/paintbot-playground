@@ -1,3 +1,10 @@
+class Canvas {
+    constructor(width, height, thickness) {
+        this.width = width;
+        this.height = height;
+        this.thickness = thickness || 25;
+    }
+}
 class Machine {
     constructor(width = 500, height = 500, gridSize = 50) {
         this.tool = new Tool();
@@ -58,6 +65,9 @@ class Tool {
         this.currentX = startX;
         this.currentY = startY;
         console.log("I'm a tool! I mean.. you too, but mostly me.");
+    }
+    set stepSize(mm) {
+        this.maxStep = mm;
     }
     setCurrentPosition(x, y) { this.currentX = x; this.currentY = y; }
     setTargetPosition(x, y) { this.targetX = x; this.targetY = y; }
@@ -148,15 +158,24 @@ class Tool {
     queue(arrowFn) {
         this.actions.push(arrowFn);
     }
+    reset() {
+        this.actions = [];
+        this.currentX = 0;
+        this.currentY = 0;
+        this.targetX = 0;
+        this.targetY = 0;
+        this.isMoving = false;
+    }
 }
 let machine;
 let tool;
 function setup() {
-    createCanvas(windowWidth, windowHeight);
-    setOrigin();
+    let canvas = createCanvas(windowWidth, windowHeight);
     rectMode("corner").noFill().frameRate(30);
-    machine = new Machine(600, 600, 25);
+    machine = new Machine(1980, 1980, 100);
     tool = machine.tool;
+    addPadding();
+    scaleToWindow();
     machine.show();
     instructions();
 }
@@ -171,15 +190,35 @@ function instructions() {
     tool.move(200, 200);
 }
 function draw() {
-    setOrigin();
+    addPadding();
     tool.run();
 }
 function windowResized() {
     resizeCanvas(windowWidth, windowHeight);
-    setOrigin();
+    scaleToWindow();
     machine.show();
+    tool.reset();
+    instructions();
 }
-function setOrigin() {
+function addPadding() {
     translate(50, 50);
+}
+function invertY() {
+    translate(0, height);
+    scale(1, -1);
+}
+function scaleToWindow() {
+    const minScaleX = (width - 100) / machine.width;
+    const minScaleY = (height - 100) / machine.height;
+    const xTooBig = minScaleX < 1;
+    const yTooBig = minScaleY < 1;
+    let useScale;
+    if (xTooBig || yTooBig) {
+        useScale = Math.min(minScaleX, minScaleX);
+    }
+    else {
+        useScale = Math.max(minScaleY, minScaleX);
+    }
+    scale(useScale, useScale);
 }
 //# sourceMappingURL=build.js.map
