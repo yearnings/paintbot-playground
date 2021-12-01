@@ -1,47 +1,53 @@
-// GLOBAL VARS & TYPES
-let numberOfShapesControl: p5.Element;
+let machine: Machine;
+let tool: Tool;
 
-// P5 WILL AUTOMATICALLY USE GLOBAL MODE IF A DRAW() FUNCTION IS DEFINED
 function setup() {
-  console.log("🚀 - Setup initialized - P5 is running");
-
   createCanvas(windowWidth, windowHeight)
-  rectMode(CENTER).noFill().frameRate(30);
-  // NUMBER OF SHAPES SLIDER
-  numberOfShapesControl = createSlider(1, 30, 15, 1).position(10, 10).style("width", "100px");
+  setOrigin();
+  rectMode("corner").noFill().frameRate(30);
+  
+  machine = new Machine(600, 600,25);
+  tool = machine.tool;
+  
+  machine.show();
+  instructions();
 }
 
-// p5 WILL AUTO RUN THIS FUNCTION IF THE BROWSER WINDOW SIZE CHANGES
+/**
+ * Instructions to the tool are sent at setup time
+ * and executed by tool.run() during draw time.
+ */
+
+function instructions() {
+  tool.move(50,50);
+  tool.penDown();
+  tool.move(50,100);
+  tool.penUp();
+  tool.move(100,100);
+  tool.move(100,200);
+  tool.penDown();
+  tool.move(200, 200);
+}
+
+function draw() {
+  setOrigin();
+  tool.run();
+}
+
+/**
+ * Runs when the browser is resized
+ */
 function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
+  setOrigin();
+  machine.show();
 }
 
-// p5 WILL HANDLE REQUESTING ANIMATION FRAMES FROM THE BROWSER AND WIL RUN DRAW() EACH ANIMATION FROME
-function draw() {
-  
-   // CLEAR BACKGROUND
-  background(0);
-
-  // CENTER OF SCREEN
-  translate(width / 2,height / 2);
-
-  const numberOfShapes = <number>numberOfShapesControl.value();
-  const colours = ColorHelper.getColorsArray(numberOfShapes);
-
-  // CONSISTENT SPEED REGARDLESS OF FRAMERATE
-  const speed = (frameCount / (numberOfShapes * 30)) * 2;
-  
-  // DRAW ALL SHAPES
-  for (var i = 0; i < numberOfShapes; i++) {
-    push();
-      const lineWidth = 8;
-      const spin = speed * (numberOfShapes - i);
-      const numberOfSides = 3 + i;
-      const width = 40 * i;
-      strokeWeight(lineWidth); 
-      stroke(colours[i]);
-      rotate(spin);
-      PolygonHelper.draw(numberOfSides, width)
-    pop();
-  }
+/**
+ * Modify the drawing area with axis inversion, padding, etc.
+ */
+function setOrigin() {
+  // translate(0, height);     // set origin to bottom left
+  // scale(1, -1);             // invert Y axis
+  translate(50, 50);           // Pad from the top a bit
 }
