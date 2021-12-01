@@ -1,3 +1,5 @@
+type Palette = string[]; // expects hex
+
 /**
  * @param shape
  * A brush is either round (sizes correspond to diameter) or
@@ -67,6 +69,27 @@ class Tool {
     minWidth: 1,
     maxWidth: 10,
   }
+  // via
+  // https://color.adobe.com/create/image
+  private palette: Palette = [
+    // Handpicked palette
+    // https://coolors.co/image-picker
+    "#D0231C",
+    "#FD6D60",
+    "#86BA8D",
+    "#F7D48D",
+    "#1A877C"
+    // Adobe palette
+    // https://color.adobe.com/create/image
+    // "#D90416",
+    // "#8C030E",
+    // "#038C73",
+    // "#D98F07",
+    // "#D96704"
+  ]
+
+  /* CSS HEX */
+
 
   // The max distance that can be traveled with each move
   private maxStep: number = 20;
@@ -138,6 +161,12 @@ class Tool {
   constructor(startX: number = 0, startY:number = 0, brush?:Brush){
     this.lastActionTime = millis();
     this.setCurrentPosition(startX, startY);
+
+    const testColor = color("#00ff00");
+    this.selectNearestColor(testColor);
+
+    const testColor2 = color("#ff00ff");
+    this.selectNearestColor(testColor2);
   }
 
   /**
@@ -348,5 +377,63 @@ class Tool {
     this.actions = [];
     this.setCurrentPosition(0,0);
     this.setTargetPosition(0,0);
+  }
+
+  /**
+   * For a single pixel's color, find the nearest
+   * color in the palette
+   */
+  private selectNearestColor(color: p5.Color){
+    // Given two colors, return an array with the delta
+    // between values in each channel of each color
+    const deltaColor = (a:p5.color, b:p5.Color) => {
+      // Apply a color extraction fn eg `red()` and return delta
+      const deltaChannel = (chFn:Function) => Math.abs(chFn(a)-chFn(b));
+      return [
+        deltaChannel(red),
+        deltaChannel(green),
+        deltaChannel(blue)
+      ];
+    }
+
+    const average = (arr:number[]) => (arr.reduce((a,b) => a+b))/arr.length;
+
+    // for each color in the palette, find the delta for each channel
+    const deltaColors = this.palette.map(paletteColor => deltaColor(paletteColor, color));
+    // then the average delta across all channels
+    const averages = deltaColors.map(average);
+    
+    // the nearest color is the one with the lowest average delta across all channels    
+    const lowestDelta = Math.min(...averages);
+    const targetIndex = averages.indexOf(lowestDelta);
+    const nearest = this.palette[targetIndex];
+
+    // Another strategy... instead of avg delta, the single most encouraging delta
+    const lowestNumber = (x:number[]) => Math.min(...x);
+    // the lowest delta channel for each color
+    const lowestSingleDeltas = deltaColors.map(lowestNumber);
+    const lowestSingleDelta = lowestNumber(lowestSingleDeltas);
+    // The location in the palette corresponding to the location of the lowest channel delta
+    const otherNearest = this.palette[lowestSingleDeltas.indexOf(lowestSingleDelta)];
+
+
+    // -------
+    // Pretty output
+    // -------
+
+    console.log('Comparison color:')
+    console.log(`%c ----`, `background: ${color}; color:${color}`);
+    console.log('Rankings')
+    this.palette.forEach((clr, ind) => {
+      const thisDelta = averages[ind];
+      // I'm sorry about this but got damn if it isn't useful.
+      console.log(`%c ----`, `background: ${clr}; color:${clr}`, deltaColors[ind].map(Math.round),"=> avg:",Math.round(averages[ind]), " lowest:", lowestSingleDeltas[ind])
+    });
+    
+    console.log('Winners:')
+    console.log(`%c ----`, `background: ${nearest}; color:${nearest}`, 'nearest');
+    console.log(`%c ----`, `background: ${otherNearest}; color:${otherNearest}`, 'othernearest lol');
+
+    return nearest;
   }
 }

@@ -72,6 +72,13 @@ class Tool {
             minWidth: 1,
             maxWidth: 10,
         };
+        this.palette = [
+            "#D0231C",
+            "#FD6D60",
+            "#86BA8D",
+            "#F7D48D",
+            "#1A877C"
+        ];
         this.maxStep = 20;
         this.scale = 1;
         this.location = createVector(0, 0);
@@ -83,6 +90,10 @@ class Tool {
         this.delay = 50;
         this.lastActionTime = millis();
         this.setCurrentPosition(startX, startY);
+        const testColor = color("#00ff00");
+        this.selectNearestColor(testColor);
+        const testColor2 = color("#ff00ff");
+        this.selectNearestColor(testColor2);
     }
     set stepSize(mm) {
         this.maxStep = mm;
@@ -209,10 +220,45 @@ class Tool {
         this.setCurrentPosition(0, 0);
         this.setTargetPosition(0, 0);
     }
+    selectNearestColor(color) {
+        const deltaColor = (a, b) => {
+            const deltaChannel = (chFn) => Math.abs(chFn(a) - chFn(b));
+            return [
+                deltaChannel(red),
+                deltaChannel(green),
+                deltaChannel(blue)
+            ];
+        };
+        const average = (arr) => (arr.reduce((a, b) => a + b)) / arr.length;
+        const deltaColors = this.palette.map(paletteColor => deltaColor(paletteColor, color));
+        const averages = deltaColors.map(average);
+        const lowestDelta = Math.min(...averages);
+        const targetIndex = averages.indexOf(lowestDelta);
+        const nearest = this.palette[targetIndex];
+        const lowestNumber = (x) => Math.min(...x);
+        const lowestSingleDeltas = deltaColors.map(lowestNumber);
+        const lowestSingleDelta = lowestNumber(lowestSingleDeltas);
+        const otherNearest = this.palette[lowestSingleDeltas.indexOf(lowestSingleDelta)];
+        console.log('Comparison color:');
+        console.log(`%c ----`, `background: ${color}; color:${color}`);
+        console.log('Rankings');
+        this.palette.forEach((clr, ind) => {
+            const thisDelta = averages[ind];
+            console.log(`%c ----`, `background: ${clr}; color:${clr}`, deltaColors[ind].map(Math.round), "=> avg:", Math.round(averages[ind]), " lowest:", lowestSingleDeltas[ind]);
+        });
+        console.log('Winners:');
+        console.log(`%c ----`, `background: ${nearest}; color:${nearest}`, 'nearest');
+        console.log(`%c ----`, `background: ${otherNearest}; color:${otherNearest}`, 'othernearest lol');
+        return nearest;
+    }
 }
 let machine;
 let tool;
 let canvas;
+let img;
+function preload() {
+    img = loadImage('img/salsa_120.jpg');
+}
 function setup() {
     createCanvas(windowWidth, windowHeight);
     rectMode("corner").noFill().frameRate(30);
@@ -226,6 +272,7 @@ function setup() {
     scaleToWindow();
     machine.render();
     instructions();
+    image(img, 50, 50);
 }
 function instructions() {
     tool.penUp();

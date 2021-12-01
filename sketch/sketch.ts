@@ -1,6 +1,12 @@
+
 let machine: Machine;
 let tool: Tool;
 let canvas: Canvas;
+let img: p5.Image;
+
+function preload() {
+  img = loadImage('img/salsa_120.jpg');
+}
 
 function setup() {
   // This is the global P5 renderer, not the paintbot canvas
@@ -22,6 +28,9 @@ function setup() {
   
   machine.render();
   instructions();
+
+  // Show me dat salsa
+  image(img, 50, 50);
 }
 
 /**
