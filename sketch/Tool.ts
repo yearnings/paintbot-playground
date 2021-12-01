@@ -69,23 +69,39 @@ class Tool {
   }
 
   // The max distance that can be traveled with each move
-  private maxStep: number = 10;
+  private maxStep: number = 20;
   public set stepSize(mm:number){
     this.maxStep = mm;
   }
 
-  // isMoving will be set true when currentX|Y != targetX|Y
+  
+  // The tool's current location
+  private location: p5.Vector = createVector(0,0);
+  // The tool's destination
+  private target: p5.Vector = createVector(0,0);
+  // Private – users must change position with move();
+  private setCurrentPosition(x:number | p5.Vector, y?:number){ 
+    // Lazy vector discernment
+    if(typeof x !== 'number'){
+      this.location = x;
+    } else {
+      this.location = createVector(x,y)
+    }
+  }
+  private setTargetPosition(x: number | p5.Vector, y?: number) { 
+    // Lazy vector discernment
+    if(typeof x !== 'number'){
+      this.location = x;
+    } else {
+      this.target = createVector(x,y)
+    }
+  }
+
+  // returns false when not on target,
   // signaling that there needs to be an animation to the
   // target position before continuing with queued actions
-  private isMoving: boolean = false;
-  
-  // The tool's last location
-  private currentX: number; private currentY: number;
-  // The tool's current destination
-  private targetX: number; private targetY: number;
-  // Private – users must change position with move();
-  private setCurrentPosition(x:number, y:number){ this.currentX = x; this.currentY = y; }
-  private setTargetPosition(x: number, y: number) { this.targetX = x; this.targetY = y; }
+  // Stringed because as objects comparison will always be false
+  private onTarget = () => (this.location.toString() == this.target.toString());
 
   /**
    * See type DrawMode
@@ -114,9 +130,7 @@ class Tool {
    */
   constructor(startX: number = 0, startY:number = 0, brush?:Brush){
     this.lastActionTime = millis();
-    this.currentX = startX;
-    this.currentY = startY;
-    console.log("I'm a tool! I mean.. you too, but mostly me.")
+    this.setCurrentPosition(startX, startY);
   }
 
   /**
@@ -136,7 +150,7 @@ class Tool {
     // Calculate the actual pressure to use
     if(pressure < 0) this.penUp();
     if(pressure > 1) {
-      console.warn(`Easy, psycho. ${pressure} is too much. 1 is enough.`)
+      console.warn(`Invalid pressure ${pressure}, setting to 1 (maximum)`)
       pressure = 1;
     }
 
@@ -170,49 +184,57 @@ class Tool {
     this.queue(
       () => { 
         this.setTargetPosition(x,y)
-        this.isMoving = true;
       }
     )
   }
 
   /**
-   * Draw a line towards this.targetX|Y, going no farther than this.maxStep
+   * Move the tool to the origin (top left) of a given canvas;
+   */
+  public toCanvas(c:Canvas){
+    this.move(c.x, c.y);
+  }
+
+  /**
+   * Draw a line towards this.target, moving no farther than this.maxStep
+   * 
+   * Vector math via
+   * https://stackoverflow.com/questions/48250639/making-an-object-move-toward-the-cursor-javascript-p5-js
    */
   private drawTowards(){
     const maxMoveAmt = this.maxStep;
     
-    if ((this.currentX != this.targetX) || (this.currentY != this.targetY)) {
-      this.isMoving = true;
-      
-      // move towards target by no more than the max amt;
-      let nextX, nextY;
-
-      // set the next X and Y points to be the current location +
-      // the max move amount, unless that move would overshoot the
-      // target location, at which point just go to the target.
-      if(this.currentX < this.targetX) {
-        nextX = Math.min( (this.currentX + maxMoveAmt), this.targetX )
-      } else {
-        nextX = Math.max((this.currentX - maxMoveAmt), this.targetX)
-      }
-
-      if (this.currentY < this.targetY) {
-        nextY = Math.min((this.currentY + maxMoveAmt), this.targetY)
-      } else {
-        nextY = Math.max((this.currentY - maxMoveAmt), this.targetY)
-      }
-
-      // Draw
-      this.setPathLineStyle();
-      line(this.currentX, this.currentY, nextX, nextY);
-      
-      // Update the current position
-      this.setCurrentPosition(nextX, nextY);
-
+    // Vector representing the untraveled portion of the line:
+    // the target less the current location
+    let untraveled = this.target.copy().sub(this.location);
+    // The vector representing maxSteps forward from the current location
+    let forwardStep = untraveled.copy().normalize().mult(this.maxStep);
+    
+    // when the length of the next step would overshoot 
+    // the target, use the target in place of the overshot
+    // location for the final move.
+    // 
+    // Note that these compare magnitude (length) not raw vector
+    
+    let nextLocation;
+    if(untraveled.mag() < forwardStep.mag()) {
+      nextLocation = this.target.copy();
     } else {
-      // console.log('Done moving')
-      this.isMoving = false;
+      nextLocation = this.location.copy().add(forwardStep);
     }
+
+    this.setPathLineStyle();
+    this.lineFromVectors(this.location, nextLocation);
+    
+    // Update the current position
+    this.setCurrentPosition(nextLocation);
+  }
+
+  /**
+   * Sugar function to draw a line between two vectors
+   */
+  private lineFromVectors(start: p5.Vector, end: p5.Vector){
+    line(start.x, start.y, end.x, end.y);
   }
 
   /**
@@ -223,7 +245,7 @@ class Tool {
     const weight = 2;
     strokeWeight(weight);
     // @ts-ignore TS doesn't know that we'll be in a canvas with a drawingContext,
-    drawingContext.setLineDash([weight*2, weight*3]);
+    // drawingContext.setLineDash([weight*2, weight*3]);
     if (this.brushIntensity > 0) {
       stroke(0, 255, 255)
       
@@ -242,25 +264,28 @@ class Tool {
     // Quit early if there's nothing to do or we ran too recently
     const hasBeenLongEnough = now - this.lastActionTime >= this.delay;
     const hasActions = this.actions.length > 0;
-    if(!hasActions || !hasBeenLongEnough) return;
+    if(this.onTarget() && !hasActions || !hasBeenLongEnough) return;
 
+    // console.log(Math.round(this.location.x), Math.round(this.target.x));
     // If we didn't bail early, update to reflect that we're running now
     this.lastActionTime = now;
     
     // if we're not at the target yet, keep drawing towards
     // the target position until we arrive.
-    if(this.isMoving){ 
+    if(!this.onTarget()){ 
+      // console.log('Moving:', Math.round(this.location.x), Math.round(this.location.y), '=>', Math.round(this.target.x), Math.round(this.target.y));
       this.drawTowards();
       return;
     } 
 
     // Otherwise, pull and execute the next queued action.
     // (Some of these actions will update the target, which
-    // will flip us back into isMoving mode)
+    // will flip us back into onTarget mode)
     
     // shift() both removes the item from the array
     // AND returns it into this variable.
     const nextAction = this.actions.shift();
+    console.log('Next action:', nextAction);
     nextAction();
   }
 
@@ -282,10 +307,7 @@ class Tool {
 
   public reset(){
     this.actions = [];
-    this.currentX = 0;
-    this.currentY = 0;
-    this.targetX = 0;
-    this.targetY = 0;
-    this.isMoving = false;
+    this.setCurrentPosition(0,0);
+    this.setTargetPosition(0,0);
   }
 }

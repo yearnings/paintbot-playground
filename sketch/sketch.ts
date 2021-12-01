@@ -1,18 +1,26 @@
 let machine: Machine;
 let tool: Tool;
+let canvas: Canvas;
 
 function setup() {
-  let canvas = createCanvas(windowWidth, windowHeight);
+  // This is the global P5 renderer, not the paintbot canvas
+  createCanvas(windowWidth, windowHeight);
   rectMode("corner").noFill().frameRate(30);
 
   // roughly 6.5ft
   machine = new Machine(1980, 1980, 100);
   tool = machine.tool;
+  
+  // A 4ft paintbot canvas, inset 200mm
+  canvas = machine.addCanvas({
+    width: 1220,
+    height: 1220
+  }, 200, 200);
 
   addPadding();
   scaleToWindow();
   
-  machine.show();
+  machine.render();
   instructions();
 }
 
@@ -22,19 +30,29 @@ function setup() {
  */
 
 function instructions() {
-  tool.move(50,50);
   tool.penDown();
-  tool.move(50,100);
-  tool.penUp();
-  tool.move(100,100);
-  tool.move(100,200);
-  tool.penDown();
-  tool.move(200, 200);
+  tool.move(100,160);
+  tool.move(160,100);
+  tool.move(80,50);
+  tool.move(40,80);
+  tool.move(40,200);
+  tool.move(200,200);
+  // tool.penUp();
+  // tool.move(200,140);
+  // tool.toCanvas(canvas);
+  // tool.move(50,50);
+  // tool.penDown();
+  // tool.move(50,100);
+  // tool.penUp();
+  // tool.move(100,100);
+  // tool.move(100,200);
+  // tool.penDown();
+  // tool.move(200, 200);
 }
 
 function draw() {
   addPadding();
-  tool.run();
+  machine.run();
 }
 
 /**
@@ -44,7 +62,7 @@ function windowResized() {
   // for whatever reason, this function dislikes getting padding
   resizeCanvas(windowWidth, windowHeight);
   scaleToWindow();
-  machine.show();
+  machine.render();
   tool.reset();
   instructions();
 }

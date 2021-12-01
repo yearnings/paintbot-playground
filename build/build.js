@@ -1,21 +1,38 @@
 class Canvas {
-    constructor(width, height, thickness) {
+    constructor(dimensions, x = 0, y = 0) {
+        let { width, height, thickness } = dimensions;
         this.width = width;
         this.height = height;
         this.thickness = thickness || 25;
+        this.x = x;
+        this.y = y;
     }
 }
 class Machine {
     constructor(width = 500, height = 500, gridSize = 50) {
         this.tool = new Tool();
+        this.gallery = [];
         this.width = width;
         this.height = height;
         this.gridSize = gridSize;
     }
-    show() {
+    render() {
         background(0);
         this.drawBackground();
         this.drawGrid();
+        this.gallery.forEach(c => {
+            fill(255);
+            noStroke;
+            rect(c.x, c.y, c.width, c.height);
+        });
+    }
+    run() {
+        this.tool.run();
+    }
+    addCanvas(dimensions, x = 0, y = 0) {
+        const canvas = new Canvas(dimensions, x, y);
+        this.gallery.push(canvas);
+        return canvas;
     }
     drawBackground() {
         fill(255, 255, 255, 20);
@@ -38,7 +55,6 @@ class Machine {
             _drawCell(rowCursorPos, colCursorPos);
             rowCursorPos += this.gridSize;
             if (rowCursorPos >= this.width) {
-                console.log('next');
                 rowCursorPos = 0;
                 colCursorPos += this.gridSize;
             }
@@ -56,21 +72,35 @@ class Tool {
             minWidth: 1,
             maxWidth: 10,
         };
-        this.maxStep = 10;
-        this.isMoving = false;
+        this.maxStep = 20;
+        this.location = createVector(0, 0);
+        this.target = createVector(0, 0);
+        this.onTarget = () => (this.location.toString() == this.target.toString());
         this.drawMode = 'BOTH';
         this.actions = [];
         this.delay = 50;
         this.lastActionTime = millis();
-        this.currentX = startX;
-        this.currentY = startY;
-        console.log("I'm a tool! I mean.. you too, but mostly me.");
+        this.setCurrentPosition(startX, startY);
     }
     set stepSize(mm) {
         this.maxStep = mm;
     }
-    setCurrentPosition(x, y) { this.currentX = x; this.currentY = y; }
-    setTargetPosition(x, y) { this.targetX = x; this.targetY = y; }
+    setCurrentPosition(x, y) {
+        if (typeof x !== 'number') {
+            this.location = x;
+        }
+        else {
+            this.location = createVector(x, y);
+        }
+    }
+    setTargetPosition(x, y) {
+        if (typeof x !== 'number') {
+            this.location = x;
+        }
+        else {
+            this.target = createVector(x, y);
+        }
+    }
     set mode(mode) {
         this.drawMode = mode;
     }
@@ -84,7 +114,7 @@ class Tool {
         if (pressure < 0)
             this.penUp();
         if (pressure > 1) {
-            console.warn(`Easy, psycho. ${pressure} is too much. 1 is enough.`);
+            console.warn(`Invalid pressure ${pressure}, setting to 1 (maximum)`);
             pressure = 1;
         }
         this.queue(() => {
@@ -102,38 +132,32 @@ class Tool {
     move(x, y) {
         this.queue(() => {
             this.setTargetPosition(x, y);
-            this.isMoving = true;
         });
+    }
+    toCanvas(c) {
+        this.move(c.x, c.y);
     }
     drawTowards() {
         const maxMoveAmt = this.maxStep;
-        if ((this.currentX != this.targetX) || (this.currentY != this.targetY)) {
-            this.isMoving = true;
-            let nextX, nextY;
-            if (this.currentX < this.targetX) {
-                nextX = Math.min((this.currentX + maxMoveAmt), this.targetX);
-            }
-            else {
-                nextX = Math.max((this.currentX - maxMoveAmt), this.targetX);
-            }
-            if (this.currentY < this.targetY) {
-                nextY = Math.min((this.currentY + maxMoveAmt), this.targetY);
-            }
-            else {
-                nextY = Math.max((this.currentY - maxMoveAmt), this.targetY);
-            }
-            this.setPathLineStyle();
-            line(this.currentX, this.currentY, nextX, nextY);
-            this.setCurrentPosition(nextX, nextY);
+        let untraveled = this.target.copy().sub(this.location);
+        let forwardStep = untraveled.copy().normalize().mult(this.maxStep);
+        let nextLocation;
+        if (untraveled.mag() < forwardStep.mag()) {
+            nextLocation = this.target.copy();
         }
         else {
-            this.isMoving = false;
+            nextLocation = this.location.copy().add(forwardStep);
         }
+        this.setPathLineStyle();
+        this.lineFromVectors(this.location, nextLocation);
+        this.setCurrentPosition(nextLocation);
+    }
+    lineFromVectors(start, end) {
+        line(start.x, start.y, end.x, end.y);
     }
     setPathLineStyle() {
         const weight = 2;
         strokeWeight(weight);
-        drawingContext.setLineDash([weight * 2, weight * 3]);
         if (this.brushIntensity > 0) {
             stroke(0, 255, 255);
         }
@@ -145,14 +169,15 @@ class Tool {
         const now = millis();
         const hasBeenLongEnough = now - this.lastActionTime >= this.delay;
         const hasActions = this.actions.length > 0;
-        if (!hasActions || !hasBeenLongEnough)
+        if (this.onTarget() && !hasActions || !hasBeenLongEnough)
             return;
         this.lastActionTime = now;
-        if (this.isMoving) {
+        if (!this.onTarget()) {
             this.drawTowards();
             return;
         }
         const nextAction = this.actions.shift();
+        console.log('Next action:', nextAction);
         nextAction();
     }
     queue(arrowFn) {
@@ -160,43 +185,44 @@ class Tool {
     }
     reset() {
         this.actions = [];
-        this.currentX = 0;
-        this.currentY = 0;
-        this.targetX = 0;
-        this.targetY = 0;
-        this.isMoving = false;
+        this.setCurrentPosition(0, 0);
+        this.setTargetPosition(0, 0);
     }
 }
 let machine;
 let tool;
+let canvas;
 function setup() {
-    let canvas = createCanvas(windowWidth, windowHeight);
+    createCanvas(windowWidth, windowHeight);
     rectMode("corner").noFill().frameRate(30);
     machine = new Machine(1980, 1980, 100);
     tool = machine.tool;
+    canvas = machine.addCanvas({
+        width: 1220,
+        height: 1220
+    }, 200, 200);
     addPadding();
     scaleToWindow();
-    machine.show();
+    machine.render();
     instructions();
 }
 function instructions() {
-    tool.move(50, 50);
     tool.penDown();
-    tool.move(50, 100);
-    tool.penUp();
-    tool.move(100, 100);
-    tool.move(100, 200);
-    tool.penDown();
+    tool.move(100, 160);
+    tool.move(160, 100);
+    tool.move(80, 50);
+    tool.move(40, 80);
+    tool.move(40, 200);
     tool.move(200, 200);
 }
 function draw() {
     addPadding();
-    tool.run();
+    machine.run();
 }
 function windowResized() {
     resizeCanvas(windowWidth, windowHeight);
     scaleToWindow();
-    machine.show();
+    machine.render();
     tool.reset();
     instructions();
 }

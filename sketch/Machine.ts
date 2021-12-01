@@ -2,10 +2,17 @@
  * The paint robot's print area
  */
 class Machine {
-  width: number;
-  height: number;
-  gridSize: number;
-  public tool: Tool = new Tool();
+  public readonly width: number;
+  public readonly height: number;
+  public readonly gridSize: number;
+  public readonly tool: Tool = new Tool();
+  /**
+   * The gallery is readable so you can script Tool
+   * movement against canvas position without having
+   * to go through Machine or Tool as an intermediary.
+   */
+  public readonly gallery:Canvas[] = [];
+
 
   /**
    * 
@@ -21,12 +28,49 @@ class Machine {
     this.gridSize = gridSize;
   }
 
-  public show(){
+  /**
+   * Render the machine background
+   */
+  public render(){
     background(0);
     this.drawBackground();
     this.drawGrid();
+
+    // Draw each canvas
+    this.gallery.forEach(c => {
+      // Canvas backgrounds only offered in white ATM
+      fill(255);
+      noStroke;
+      rect(c.x, c.y, c.width, c.height);
+    });
   }
 
+  /**
+   * Run the machine, which runs the tool
+   * and manages canvases
+   */
+  public run(){
+    this.tool.run();
+  }
+
+  /**
+   * Add a canvas to the machine.
+   * 
+   * @param dimensions
+   * @param x optional 
+   * @param y optional
+   * 
+   * @returns a reference to the created canvas
+   */
+  public addCanvas(dimensions:CanvasDimensions, x: number = 0, y:number = 0){
+    const canvas = new Canvas(dimensions, x, y);
+    this.gallery.push(canvas);
+    return canvas;
+  }
+  
+  /**
+   * Draw the background (just a filled rectangle)
+   */
   private drawBackground(){
     // Machine background style
     fill(255, 255, 255, 20);
@@ -36,6 +80,9 @@ class Machine {
     rect(0, 0, this.width, this.height);
   }
 
+  /**
+   * Draw the lined sectiond of the background
+   */
   private drawGrid(){
     // Cell drawing styles
     noFill();
@@ -55,7 +102,6 @@ class Machine {
       _drawCell(rowCursorPos, colCursorPos);
       rowCursorPos += this.gridSize;
       if (rowCursorPos >= this.width) {
-        console.log('next');
         rowCursorPos = 0;
         colCursorPos += this.gridSize;
       }

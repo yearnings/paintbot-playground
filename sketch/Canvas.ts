@@ -1,3 +1,9 @@
+type CanvasDimensions = {
+  width: number;
+  height: number;
+  thickness?:number;
+}
+
 /**
  * A canvas represents a paintable area IRL.
  * 
@@ -15,10 +21,16 @@ class Canvas{
   public thickness: number;
   public width: number;
   public height: number;
+  public readonly x: number;
+  public readonly y: number;
 
-  constructor(width: number, height: number, thickness?:number){
+  constructor(dimensions: CanvasDimensions, x: number = 0, y:number = 0){
+    let { width, height, thickness } = dimensions;
     this.width = width;
     this.height = height;
     this.thickness = thickness || 25;
+
+    this.x = x;
+    this.y = y;
   }
 }
