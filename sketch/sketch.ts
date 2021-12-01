@@ -31,10 +31,10 @@ function setup() {
 
 function instructions() {
   tool.penUp();
-  tool.toCanvas(canvas);
   tool.penDown();
   tool.right(500);
-  tool.down(200);
+  tool.down(100);
+  tool.toCanvas(canvas);
 }
 
 function draw() {

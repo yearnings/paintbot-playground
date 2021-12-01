@@ -76,6 +76,7 @@ class Tool {
         this.scale = 1;
         this.location = createVector(0, 0);
         this.target = createVector(0, 0);
+        this.getLocation = () => (this.location.copy());
         this.onTarget = () => (this.location.toString() == this.target.toString());
         this.drawMode = 'BOTH';
         this.actions = [];
@@ -135,10 +136,24 @@ class Tool {
             this.setTargetPosition(x, y);
         });
     }
-    up(mm) { this.move(this.location.x, this.location.y - mm); }
-    down(mm) { this.move(this.location.x, this.location.y + mm); }
-    left(mm) { this.move(this.location.x - mm, this.location.y); }
-    right(mm) { this.move(this.location.x + mm, this.location.y); }
+    moveRelative(xOffset, yOffset) {
+        this.queue(() => {
+            let futureLocation = this.getLocation();
+            this.setTargetPosition(futureLocation.x + xOffset, futureLocation.y + yOffset);
+        });
+    }
+    up(mm) {
+        this.moveRelative(this.location.x, this.location.y - mm);
+    }
+    down(mm) {
+        this.moveRelative(this.location.x, this.location.y + mm);
+    }
+    left(mm) {
+        this.moveRelative(this.location.x - mm, this.location.y);
+    }
+    right(mm) {
+        this.moveRelative(this.location.x + mm, this.location.y);
+    }
     toCanvas(c) {
         this.move(c.x, c.y);
     }
@@ -155,7 +170,7 @@ class Tool {
         }
         this.setPathLineStyle();
         this.scaledLineFromVectors(this.location, nextLocation);
-        this.setCurrentPosition(nextLocation.setHeading(0));
+        this.setCurrentPosition(nextLocation);
     }
     scaledLineFromVectors(start, end) {
         scale(this.scale);
@@ -214,10 +229,10 @@ function setup() {
 }
 function instructions() {
     tool.penUp();
-    tool.toCanvas(canvas);
     tool.penDown();
     tool.right(500);
-    tool.down(200);
+    tool.down(100);
+    tool.toCanvas(canvas);
 }
 function draw() {
     addPadding();

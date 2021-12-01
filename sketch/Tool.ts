@@ -102,6 +102,7 @@ class Tool {
       this.target = createVector(x,y)
     }
   }
+  private getLocation= () => (this.location.copy());
 
   // returns false when not on target,
   // signaling that there needs to be an animation to the
@@ -195,13 +196,34 @@ class Tool {
   }
 
   /**
+   * Move relative to the current location at time of execution
    * 
-   * 
+   * @param xOffset positive or negative, in mm
+   * @param yOffset positive or negative, in mm
    */
-  public up(mm: number){ this.move(this.location.x, this.location.y - mm) }
-  public down(mm: number){ this.move(this.location.x, this.location.y + mm) }
-  public left(mm: number){ this.move(this.location.x - mm, this.location.y) }
-  public right(mm: number){ this.move(this.location.x + mm, this.location.y) }
+  public moveRelative(xOffset:number, yOffset:number){
+    this.queue(() => {
+      // This location won't resolve until this
+      // queued anon fn is fired
+      let futureLocation = this.getLocation();
+      this.setTargetPosition(futureLocation.x + xOffset, futureLocation.y + yOffset)
+    })
+  }
+  /**
+   * Relative moves
+   */
+  public up(mm: number) {
+    this.moveRelative(this.location.x, this.location.y - mm)
+  }
+  public down(mm: number) {
+    this.moveRelative(this.location.x, this.location.y + mm)
+  }
+  public left(mm: number) {
+    this.moveRelative(this.location.x - mm, this.location.y)
+  }
+  public right(mm: number) {
+    this.moveRelative(this.location.x + mm, this.location.y)
+  }
 
   /**
    * Move the tool to the origin (top left) of a given canvas;
@@ -242,7 +264,7 @@ class Tool {
     this.scaledLineFromVectors(this.location, nextLocation);
     
     // Update the current position
-    this.setCurrentPosition(nextLocation.setHeading(0));
+    this.setCurrentPosition(nextLocation);
   }
 
   /**
