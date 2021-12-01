@@ -54,6 +54,7 @@ type ActionQueue = QueuedFunction[];
 
 /**
  * Describes and maneuvers the drawing tool attached to the Machine.
+ * All sizes in millimeters.
  */
 class Tool {
   // The current draw intensity.
@@ -69,6 +70,9 @@ class Tool {
 
   // The max distance that can be traveled with each move
   private maxStep: number = 10;
+  public set stepSize(mm:number){
+    this.maxStep = mm;
+  }
 
   // isMoving will be set true when currentX|Y != targetX|Y
   // signaling that there needs to be an animation to the
@@ -158,10 +162,7 @@ class Tool {
   }
   
   /**
-   * @param x
-   * @param y
    * Move the tool to a new position, drawing if appropriate
-   * 
    */
   public move(x: number, y: number){
     // Under the hood, this queues a target change and the
@@ -261,8 +262,6 @@ class Tool {
     // AND returns it into this variable.
     const nextAction = this.actions.shift();
     nextAction();
-    
-    
   }
 
   /**
@@ -274,8 +273,8 @@ class Tool {
    * queue and execute immediately.
    * 
    * @param arrowFn
-   * move(0,0) should be passed in like 
-   * () => {move(0,0)}
+   * fnName(arg1,arg2) should be passed in like 
+   * () => {fnName(arg1,arg2)}
    */
   private queue(arrowFn:QueuedFunction){
     this.actions.push(arrowFn);
