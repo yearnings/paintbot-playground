@@ -30,7 +30,74 @@ function setup() {
   instructions();
 
   // Show me dat salsa
+  img.loadPixels();
   image(img, 50, 50);
+  // Salsa to paint
+  // const colors = img.pixels.reduce((rows,thisPx,ind) => {
+  //   const row = Math.floor(ind/img.width);
+  //   rows[row] = [].concat((rows[row]) || [], thisPx);
+  //   return rows;
+  // })
+
+  // Turn a color into tuple of loggable strings to display a colored square in the console.
+  const loggableColor = (c: p5.Color) => [`%c -`, `background: ${c}; color:${c}`];
+  const loggableColorRow = (cArr: p5.Color[]) => {
+    // Make a string of %refs to each style and a small string -- 
+    // that the style can be applied to (longer strings = longer color blocks)
+    const textString = cArr.map(_ => '%c .').join('');
+    const styleStrings = cArr.map(c => `font-size: '5px'; background: ${c}; color:${c}`);
+    // Return an array of strings that can be spread into a console.log();
+    // It begins with one giant string with the correct number of style refs,
+    // followed by a string describing each style ref.
+    return [textString, ...styleStrings]
+  }
+  
+  // img.pixels is a flat array of sequential rgba numbers,
+  // so img.pixels.length == img.width*4 (because r,g,b,a);
+  // 
+  // Spread the pixel array into a mutable clone because
+  // we're gonna splice values off of it repeatedly, and
+  // don't want to disturb the actual pixel array.
+  const mutablePixels = [...img.pixels];
+
+  // Start by converting the quads into colors.
+  // This array will also be mutated by pixelRows 
+  const mutablePixelColors = [...Array(img.pixels.length)].map(_ => {
+    // Shave the first 4 elements off the mutable array
+    const [r, g, b, a] = mutablePixels.splice(0, 4);
+    const c = color(r,g,b,a);
+    // console.log(...loggableColor(r));
+    return c;
+  });
+
+  // Break the flat array of colors into separate rows
+  const pixelCols = [...Array(img.width)].map(_ => {
+    // Shave the first 4 elements off the mutable array
+    const col = mutablePixelColors.splice(0, img.height);
+    return col;
+  });
+  console.log(pixelCols.length);
+
+ [...Array(img.height)].forEach((_, rowIndex) => {
+   const rowColors = pixelCols.map(col => col[rowIndex]);
+   console.log(...loggableColorRow(rowColors));
+  //  const loggable:string[] = [];
+  //  rowColors.forEach(c => loggable.push(...loggableColor(c)));
+  //  [...Array(3)].forEach((_, i) => loggable.push(...loggableColor(rowColors[i])));
+  //  console.log(loggable);
+  //  console.log(...loggable);
+ })
+
+
+  // https://stackoverflow.com/a/44687374
+  
+  // const pixelRows = [...Array(img.height)].map(_ => mutablePixels.splice(0, img.width));
+  
+  
+  
+  // pixelRows.forEach(row => {
+
+  // })
 }
 
 /**

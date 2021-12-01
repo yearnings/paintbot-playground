@@ -220,7 +220,7 @@ class Tool {
         this.setCurrentPosition(0, 0);
         this.setTargetPosition(0, 0);
     }
-    selectNearestColor(color) {
+    selectNearestColor(refColor) {
         const deltaColor = (a, b) => {
             const deltaChannel = (chFn) => Math.abs(chFn(a) - chFn(b));
             return [
@@ -230,7 +230,7 @@ class Tool {
             ];
         };
         const average = (arr) => (arr.reduce((a, b) => a + b)) / arr.length;
-        const deltaColors = this.palette.map(paletteColor => deltaColor(paletteColor, color));
+        const deltaColors = this.palette.map(paletteColor => deltaColor(color(paletteColor), refColor));
         const averages = deltaColors.map(average);
         const lowestDelta = Math.min(...averages);
         const targetIndex = averages.indexOf(lowestDelta);
@@ -272,7 +272,29 @@ function setup() {
     scaleToWindow();
     machine.render();
     instructions();
+    img.loadPixels();
     image(img, 50, 50);
+    const loggableColor = (c) => [`%c -`, `background: ${c}; color:${c}`];
+    const loggableColorRow = (cArr) => {
+        const textString = cArr.map(_ => '%c .').join('');
+        const styleStrings = cArr.map(c => `font-size: '5px'; background: ${c}; color:${c}`);
+        return [textString, ...styleStrings];
+    };
+    const mutablePixels = [...img.pixels];
+    const mutablePixelColors = [...Array(img.pixels.length)].map(_ => {
+        const [r, g, b, a] = mutablePixels.splice(0, 4);
+        const c = color(r, g, b, a);
+        return c;
+    });
+    const pixelCols = [...Array(img.width)].map(_ => {
+        const col = mutablePixelColors.splice(0, img.height);
+        return col;
+    });
+    console.log(pixelCols.length);
+    [...Array(img.height)].forEach((_, rowIndex) => {
+        const rowColors = pixelCols.map(col => col[rowIndex]);
+        console.log(...loggableColorRow(rowColors));
+    });
 }
 function instructions() {
     tool.penUp();

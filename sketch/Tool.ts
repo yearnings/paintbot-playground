@@ -383,10 +383,10 @@ class Tool {
    * For a single pixel's color, find the nearest
    * color in the palette
    */
-  private selectNearestColor(color: p5.Color){
+  private selectNearestColor(refColor: p5.Color){
     // Given two colors, return an array with the delta
     // between values in each channel of each color
-    const deltaColor = (a:p5.color, b:p5.Color) => {
+    const deltaColor = (a:p5.Color, b:p5.Color) => {
       // Apply a color extraction fn eg `red()` and return delta
       const deltaChannel = (chFn:Function) => Math.abs(chFn(a)-chFn(b));
       return [
@@ -399,7 +399,7 @@ class Tool {
     const average = (arr:number[]) => (arr.reduce((a,b) => a+b))/arr.length;
 
     // for each color in the palette, find the delta for each channel
-    const deltaColors = this.palette.map(paletteColor => deltaColor(paletteColor, color));
+    const deltaColors = this.palette.map(paletteColor => deltaColor(color(paletteColor), refColor));
     // then the average delta across all channels
     const averages = deltaColors.map(average);
     
