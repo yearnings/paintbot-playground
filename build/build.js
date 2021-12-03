@@ -26,6 +26,10 @@ class Graphic {
         });
         return pixelRows;
     }
+    static imageToColorArr(img) {
+        const pixels = this.pixelsForImage(img);
+        return this.numArrToColorArr(pixels);
+    }
     static logSwatch(color, msg) {
         console.log([`%c---`, `background: ${color}; color:${color}`], msg || '');
     }

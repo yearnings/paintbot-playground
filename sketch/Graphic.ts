@@ -45,6 +45,15 @@ class Graphic {
   }
 
   /**
+   * Given a p5.Image (which can be unloaded),
+   * load pixels, convert to color array, return.
+   */
+  public static imageToColorArr(img: p5.Image){
+    const pixels = this.pixelsForImage(img);
+    return this.numArrToColorArr(pixels);
+  }
+
+  /**
    * Print a color swatch to the console,
    * optionally followed by a message
    */
@@ -53,6 +62,9 @@ class Graphic {
     console.log([`%c---`, `background: ${color}; color:${color}`], msg || '');
   }
 
+  /**
+   * Print a row of colors to the console
+   */
   public static logColorRow(cArr: p5.Color[]) {
     // Make a string of %refs to each style and a small string -- 
     // that the style can be applied to (longer strings = longer color blocks)
