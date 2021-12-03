@@ -30,7 +30,6 @@ function setup() {
   instructions();
 
   // Show me dat salsa
-  img.loadPixels();
   image(img, 50, 50);
 }
 
@@ -40,10 +39,7 @@ function setup() {
  */
 
 function instructions() {
-  tool.penUp();
   tool.penDown();
-  tool.right(500);
-  tool.down(100);
   tool.toCanvas(canvas);
 }
 

@@ -8,6 +8,33 @@ class Canvas {
         this.y = y;
     }
 }
+class Graphic {
+    static pixelsForImage(img) {
+        img.loadPixels();
+        return img.pixels;
+    }
+    static numArrToColorArr(pixelData) {
+        const mutablePixels = [...pixelData];
+        const mutablePixelColors = [...Array(pixelData.length)].map(() => {
+            const [r, g, b, a] = mutablePixels.splice(0, 4);
+            const colorFromNumbers = color(r, g, b, a);
+            return colorFromNumbers;
+        });
+        const pixelRows = [...Array(img.width)].map(() => {
+            const rowColors = mutablePixelColors.splice(0, img.width);
+            return rowColors;
+        });
+        return pixelRows;
+    }
+    static logSwatch(color, msg) {
+        console.log([`%c---`, `background: ${color}; color:${color}`], msg || '');
+    }
+    static logColorRow(cArr) {
+        const textString = cArr.map(() => `%c.`).join('');
+        const styleStrings = cArr.map(c => `background: ${c}; color:${c}; font-size: 10px; line-height:8px; font-family: monospace;`);
+        console.log(textString, ...styleStrings);
+    }
+}
 class Machine {
     constructor(width = 500, height = 500, gridSize = 50) {
         this.tool = new Tool();
@@ -265,14 +292,10 @@ function setup() {
     scaleToWindow();
     machine.render();
     instructions();
-    img.loadPixels();
     image(img, 50, 50);
 }
 function instructions() {
-    tool.penUp();
     tool.penDown();
-    tool.right(500);
-    tool.down(100);
     tool.toCanvas(canvas);
 }
 function draw() {
@@ -307,33 +330,5 @@ function scaleToWindow() {
     }
     scale(useScale, useScale);
     tool.scale = useScale;
-}
-function imageToConsole(img) {
-    img.loadPixels();
-    const colors = img.pixels.reduce((rows, thisPx, ind) => {
-        const row = Math.floor(ind / img.width);
-        rows[row] = [].concat((rows[row]) || [], thisPx);
-        return rows;
-    });
-    const loggableColor = (c) => [`%c -`, `background: ${c}; color:${c}`];
-    const loggableColorRow = (cArr, row) => {
-        const textString = cArr.map((_, i) => `%c.`).join('');
-        const styleStrings = cArr.map(c => `background: ${c}; color:${c}; font-size: 10px; line-height:8px; font-family: monospace;`);
-        return [textString, ...styleStrings];
-    };
-    const mutablePixels = [...img.pixels];
-    const mutablePixelColors = [...Array(img.pixels.length)].map(() => {
-        const [r, g, b, a] = mutablePixels.splice(0, 4);
-        const c = color(r, g, b, a);
-        return c;
-    });
-    const pixelCols = [...Array(img.width)].map(_ => {
-        const col = mutablePixelColors.splice(0, img.height);
-        return col;
-    });
-    [...Array(img.height)].forEach((_, rowIndex) => {
-        const rowColors = pixelCols[rowIndex];
-        console.log(...loggableColorRow(rowColors, rowIndex));
-    });
 }
 //# sourceMappingURL=build.js.map
