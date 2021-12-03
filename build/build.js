@@ -257,31 +257,65 @@ let tool;
 let canvas;
 let img;
 function preload() {
-    img = loadImage('img/salsa_120.jpg');
+    img = loadImage('img/pika_40.png');
 }
 function setup() {
     createCanvas(windowWidth, windowHeight);
     rectMode("corner").noFill().frameRate(30);
-    machine = new Machine(1980, 1980, 100);
-    tool = machine.tool;
-    canvas = machine.addCanvas({
-        width: 1220,
-        height: 1220
-    }, 200, 200);
     addPadding();
     scaleToWindow();
-    machine.render();
-    instructions();
     img.loadPixels();
     image(img, 50, 50);
+    const veryImportantMessage = `
+  What the fuck did you just fucking say about me, 
+  you little bitch? I'll have you know I graduated 
+  top of my class in the Navy Seals, and I've been 
+  involved in numerous secret raids on Al-Quaeda, 
+  and I have over 300 confirmed kills. I am trained 
+  in gorilla warfare and I'm the top sniper in the 
+  entire US armed forces. You are nothing to me but 
+  just another target. I will wipe you the fuck out 
+  with precision the likes of which has never been 
+  seen before on this Earth, mark my fucking words. 
+  You think you can get away with saying that shit 
+  to me over the Internet? Think again, fucker. 
+  As we speak I am contacting my secret network of 
+  spies across the USA and your IP is being traced 
+  right now so you better prepare for the storm, 
+  maggot. The storm that wipes out the pathetic 
+  little thing you call your life. You're fucking 
+  dead, kid. I can be anywhere, anytime, and I can 
+  kill you in over seven hundred ways, and that's 
+  just with my bare hands. Not only am I extensively 
+  trained in unarmed combat, but I have access to 
+  the entire arsenal of the United States Marine 
+  Corps and I will use it to its full extent to wipe 
+  your miserable ass off the face of the continent, 
+  you little shit. If only you could have known what 
+  unholy retribution your little "clever" comment 
+  was about to bring down upon you, maybe you would 
+  have held your fucking tongue. But you couldn't, 
+  you didn't, and now you're paying the price, you 
+  goddamn idiot. I will shit fury all over you and 
+  you will drown in it. You're fucking dead, kiddo.
+`
+        .replace(/(\r\n|\n|\r)/gm, "")
+        .replace(/(\s+)/g, " ")
+        .trim();
     const loggableColor = (c) => [`%c -`, `background: ${c}; color:${c}`];
-    const loggableColorRow = (cArr) => {
-        const textString = cArr.map(_ => '%c .').join('');
-        const styleStrings = cArr.map(c => `font-size: '5px'; background: ${c}; color:${c}`);
+    const loggableColorRow = (cArr, row) => {
+        const text = (index) => {
+            const charsToReturn = 2;
+            const rowOffset = (row * cArr.length * charsToReturn);
+            const chars = veryImportantMessage.substr((rowOffset + index * charsToReturn), charsToReturn) || ' '.repeat(charsToReturn);
+            return chars;
+        };
+        const textString = cArr.map((_, i) => `%c${text(i)}`).join('');
+        const styleStrings = cArr.map(c => `background: ${c}; color:${c}; font-size: 20px; line-height:16px; font-family: monospace;`);
         return [textString, ...styleStrings];
     };
     const mutablePixels = [...img.pixels];
-    const mutablePixelColors = [...Array(img.pixels.length)].map(_ => {
+    const mutablePixelColors = [...Array(img.pixels.length)].map(() => {
         const [r, g, b, a] = mutablePixels.splice(0, 4);
         const c = color(r, g, b, a);
         return c;
@@ -290,10 +324,9 @@ function setup() {
         const col = mutablePixelColors.splice(0, img.height);
         return col;
     });
-    console.log(pixelCols.length);
     [...Array(img.height)].forEach((_, rowIndex) => {
-        const rowColors = pixelCols.map(col => col[rowIndex]);
-        console.log(...loggableColorRow(rowColors));
+        const rowColors = pixelCols[rowIndex];
+        console.log(...loggableColorRow(rowColors, rowIndex));
     });
 }
 function instructions() {
@@ -304,15 +337,10 @@ function instructions() {
     tool.toCanvas(canvas);
 }
 function draw() {
-    addPadding();
-    machine.run();
 }
 function windowResized() {
     resizeCanvas(windowWidth, windowHeight);
     scaleToWindow();
-    machine.render();
-    tool.reset();
-    instructions();
 }
 function addPadding() {
     translate(50, 50);
@@ -322,18 +350,5 @@ function invertY() {
     scale(1, -1);
 }
 function scaleToWindow() {
-    const minScaleX = (width - 100) / machine.width;
-    const minScaleY = (height - 100) / machine.height;
-    const xTooBig = minScaleX < 1;
-    const yTooBig = minScaleY < 1;
-    let useScale;
-    if (xTooBig || yTooBig) {
-        useScale = Math.min(minScaleX, minScaleX);
-    }
-    else {
-        useScale = Math.max(minScaleY, minScaleX);
-    }
-    scale(useScale, useScale);
-    tool.scale = useScale;
 }
 //# sourceMappingURL=build.js.map
