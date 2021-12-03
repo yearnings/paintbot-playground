@@ -161,12 +161,6 @@ class Tool {
   constructor(startX: number = 0, startY:number = 0, brush?:Brush){
     this.lastActionTime = millis();
     this.setCurrentPosition(startX, startY);
-
-    const testColor = color("#00ff00");
-    this.selectNearestColor(testColor);
-
-    const testColor2 = color("#ff00ff");
-    this.selectNearestColor(testColor2);
   }
 
   /**
@@ -353,7 +347,7 @@ class Tool {
     // shift() both removes the item from the array
     // AND returns it into this variable.
     const nextAction = this.actions.shift();
-    console.log('Next action:', nextAction);
+    // console.log('Next action:', nextAction);
     nextAction();
   }
 
@@ -406,7 +400,7 @@ class Tool {
     // the nearest color is the one with the lowest average delta across all channels    
     const lowestDelta = Math.min(...averages);
     const targetIndex = averages.indexOf(lowestDelta);
-    const nearest = this.palette[targetIndex];
+    const nearestByAvg = this.palette[targetIndex];
 
     // Another strategy... instead of avg delta, the single most encouraging delta
     const lowestNumber = (x:number[]) => Math.min(...x);
@@ -414,26 +408,22 @@ class Tool {
     const lowestSingleDeltas = deltaColors.map(lowestNumber);
     const lowestSingleDelta = lowestNumber(lowestSingleDeltas);
     // The location in the palette corresponding to the location of the lowest channel delta
-    const otherNearest = this.palette[lowestSingleDeltas.indexOf(lowestSingleDelta)];
+    const nearestByMin = this.palette[lowestSingleDeltas.indexOf(lowestSingleDelta)];
 
 
     // -------
-    // Pretty output
+    // Log both options when algos disagree
+    // I haven't tuned or optimized this at all. Avg could be the worse algo.
     // -------
+    if(nearestByAvg !== nearestByMin){
+      console.log('FYI: color similarity algos disagree:')
+      console.log(`%c ----`, `background: ${color}; color:${color}`);
+      console.log(`%c ----`, `background: ${nearestByAvg}; color:${nearestByAvg}`, `Nearest by average (used)`);
+      console.log(`%c ----`, `background: ${nearestByMin}; color:${nearestByMin}`, 'Nearesty by single delta');
+      console.log(`If single delta consistently picks better than average, change which algo is used.`);
+      console.log('')
+    }
 
-    console.log('Comparison color:')
-    console.log(`%c ----`, `background: ${color}; color:${color}`);
-    console.log('Rankings')
-    this.palette.forEach((clr, ind) => {
-      const thisDelta = averages[ind];
-      // I'm sorry about this but got damn if it isn't useful.
-      console.log(`%c ----`, `background: ${clr}; color:${clr}`, deltaColors[ind].map(Math.round),"=> avg:",Math.round(averages[ind]), " lowest:", lowestSingleDeltas[ind])
-    });
-    
-    console.log('Winners:')
-    console.log(`%c ----`, `background: ${nearest}; color:${nearest}`, 'nearest');
-    console.log(`%c ----`, `background: ${otherNearest}; color:${otherNearest}`, 'othernearest lol');
-
-    return nearest;
+    return nearestByAvg;
   }
 }

@@ -90,10 +90,6 @@ class Tool {
         this.delay = 50;
         this.lastActionTime = millis();
         this.setCurrentPosition(startX, startY);
-        const testColor = color("#00ff00");
-        this.selectNearestColor(testColor);
-        const testColor2 = color("#ff00ff");
-        this.selectNearestColor(testColor2);
     }
     set stepSize(mm) {
         this.maxStep = mm;
@@ -209,7 +205,6 @@ class Tool {
             return;
         }
         const nextAction = this.actions.shift();
-        console.log('Next action:', nextAction);
         nextAction();
     }
     queue(arrowFn) {
@@ -234,22 +229,20 @@ class Tool {
         const averages = deltaColors.map(average);
         const lowestDelta = Math.min(...averages);
         const targetIndex = averages.indexOf(lowestDelta);
-        const nearest = this.palette[targetIndex];
+        const nearestByAvg = this.palette[targetIndex];
         const lowestNumber = (x) => Math.min(...x);
         const lowestSingleDeltas = deltaColors.map(lowestNumber);
         const lowestSingleDelta = lowestNumber(lowestSingleDeltas);
-        const otherNearest = this.palette[lowestSingleDeltas.indexOf(lowestSingleDelta)];
-        console.log('Comparison color:');
-        console.log(`%c ----`, `background: ${color}; color:${color}`);
-        console.log('Rankings');
-        this.palette.forEach((clr, ind) => {
-            const thisDelta = averages[ind];
-            console.log(`%c ----`, `background: ${clr}; color:${clr}`, deltaColors[ind].map(Math.round), "=> avg:", Math.round(averages[ind]), " lowest:", lowestSingleDeltas[ind]);
-        });
-        console.log('Winners:');
-        console.log(`%c ----`, `background: ${nearest}; color:${nearest}`, 'nearest');
-        console.log(`%c ----`, `background: ${otherNearest}; color:${otherNearest}`, 'othernearest lol');
-        return nearest;
+        const nearestByMin = this.palette[lowestSingleDeltas.indexOf(lowestSingleDelta)];
+        if (nearestByAvg !== nearestByMin) {
+            console.log('FYI: color similarity algos disagree:');
+            console.log(`%c ----`, `background: ${color}; color:${color}`);
+            console.log(`%c ----`, `background: ${nearestByAvg}; color:${nearestByAvg}`, `Nearest by average (used)`);
+            console.log(`%c ----`, `background: ${nearestByMin}; color:${nearestByMin}`, 'Nearesty by single delta');
+            console.log(`If single delta consistently picks better than average, change which algo is used.`);
+            console.log('');
+        }
+        return nearestByAvg;
     }
 }
 let machine;
@@ -274,31 +267,6 @@ function setup() {
     instructions();
     img.loadPixels();
     image(img, 50, 50);
-    const colors = img.pixels.reduce((rows, thisPx, ind) => {
-        const row = Math.floor(ind / img.width);
-        rows[row] = [].concat((rows[row]) || [], thisPx);
-        return rows;
-    });
-    const loggableColor = (c) => [`%c -`, `background: ${c}; color:${c}`];
-    const loggableColorRow = (cArr, row) => {
-        const textString = cArr.map((_, i) => `%c.`).join('');
-        const styleStrings = cArr.map(c => `background: ${c}; color:${c}; font-size: 10px; line-height:8px; font-family: monospace;`);
-        return [textString, ...styleStrings];
-    };
-    const mutablePixels = [...img.pixels];
-    const mutablePixelColors = [...Array(img.pixels.length)].map(() => {
-        const [r, g, b, a] = mutablePixels.splice(0, 4);
-        const c = color(r, g, b, a);
-        return c;
-    });
-    const pixelCols = [...Array(img.width)].map(_ => {
-        const col = mutablePixelColors.splice(0, img.height);
-        return col;
-    });
-    [...Array(img.height)].forEach((_, rowIndex) => {
-        const rowColors = pixelCols[rowIndex];
-        console.log(...loggableColorRow(rowColors, rowIndex));
-    });
 }
 function instructions() {
     tool.penUp();
@@ -339,5 +307,33 @@ function scaleToWindow() {
     }
     scale(useScale, useScale);
     tool.scale = useScale;
+}
+function imageToConsole(img) {
+    img.loadPixels();
+    const colors = img.pixels.reduce((rows, thisPx, ind) => {
+        const row = Math.floor(ind / img.width);
+        rows[row] = [].concat((rows[row]) || [], thisPx);
+        return rows;
+    });
+    const loggableColor = (c) => [`%c -`, `background: ${c}; color:${c}`];
+    const loggableColorRow = (cArr, row) => {
+        const textString = cArr.map((_, i) => `%c.`).join('');
+        const styleStrings = cArr.map(c => `background: ${c}; color:${c}; font-size: 10px; line-height:8px; font-family: monospace;`);
+        return [textString, ...styleStrings];
+    };
+    const mutablePixels = [...img.pixels];
+    const mutablePixelColors = [...Array(img.pixels.length)].map(() => {
+        const [r, g, b, a] = mutablePixels.splice(0, 4);
+        const c = color(r, g, b, a);
+        return c;
+    });
+    const pixelCols = [...Array(img.width)].map(_ => {
+        const col = mutablePixelColors.splice(0, img.height);
+        return col;
+    });
+    [...Array(img.height)].forEach((_, rowIndex) => {
+        const rowColors = pixelCols[rowIndex];
+        console.log(...loggableColorRow(rowColors, rowIndex));
+    });
 }
 //# sourceMappingURL=build.js.map
