@@ -376,20 +376,37 @@ class Tool {
    */
   public paintImage(img: p5.Image, canvas: Canvas){
     const colorArr = Graphic.imageToColorArr(img);
-    const colors = Graphic.stratify(colorArr, this.palette);
+    const booleanLayersByDensity = Graphic.stratify(colorArr, this.palette);
 
-    
-    // // How many pixels tall/wide the image is
-    // const xResolution = colorArr[0].length;
-    // const yResolution = colorArr.length;
+    // How many pixels tall/wide the image is
+    const xResolution = colorArr[0].length;
+    const yResolution = colorArr.length;
 
-    // // How big each painted pixel needs to be to fill the canvas
-    // const pixelWidth = canvas.width / xResolution;
-    // const pixelHeight = canvas.height / yResolution;
+    // How big each painted pixel needs to be to fill the canvas
+    const pixelWidth = canvas.width / xResolution;
+    const pixelHeight = canvas.height / yResolution;
 
     // // --------------------
     // // Instructions
     // // --------------------
+
+    // Gonna straight up draw rects right now for speed.
+    booleanLayersByDensity.forEach(colorLayer => {
+      const pColor = colorLayer.color;
+      const colorArr = colorLayer.data;
+      colorArr.forEach((row, rowIndex) => {
+        // const boolRowToColor = row.map(bool => bool ? pColor : '#ffffff').map(str => color(str));
+        row.forEach((cell, cellIndex) => {
+          if(cell) {
+            const cellX = canvas.x + (pixelWidth * cellIndex);
+            const cellY = canvas.y + (pixelHeight * rowIndex);
+            fill(pColor);
+            rect(cellX,cellY,pixelWidth, pixelHeight);
+          }
+        })
+        // Graphic.logColorRow(boolRowToColor);
+      })
+    });
 
     // this.toCanvas(canvas);
 

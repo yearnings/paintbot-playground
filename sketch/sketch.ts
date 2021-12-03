@@ -41,6 +41,7 @@ function setup() {
 function instructions() {
   tool.penDown();
   tool.toCanvas(canvas);
+  tool.paintImage(img, canvas);
 }
 
 function draw() {

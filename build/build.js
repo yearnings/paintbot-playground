@@ -57,15 +57,12 @@ class Graphic {
         const lowestSingleDeltas = deltaColors.map(lowestNumber);
         const lowestSingleDelta = lowestNumber(lowestSingleDeltas);
         const nearestByMin = palette[lowestSingleDeltas.indexOf(lowestSingleDelta)];
-        if (nearestByAvg !== nearestByMin) {
-            console.log('FYI: color similarity algos disagree:');
-            console.log(`%c ----`, `background: ${color}; color:${color}`);
-            console.log(`%c ----`, `background: ${nearestByAvg}; color:${nearestByAvg}`, `Nearest by average (used)`);
-            console.log(`%c ----`, `background: ${nearestByMin}; color:${nearestByMin}`, 'Nearesty by single delta');
-            console.log(`If single delta consistently picks better than average, change which algo is used.`);
-            console.log('');
+        if (nearestByMin !== nearestByAvg) {
+            if (lowestSingleDelta < 10)
+                return nearestByMin;
         }
         return nearestByAvg;
+        return nearestByMin;
     }
     static stratify(imgColors, palette) {
         const booleanLayers = [];
@@ -83,7 +80,14 @@ class Graphic {
                 density
             });
         });
-        return booleanLayers;
+        const byDensity = (a, b) => {
+            if (a.density < b.density)
+                return -1;
+            if (a.density > b.density)
+                return 1;
+            return 0;
+        };
+        return booleanLayers.sort(byDensity);
     }
 }
 class Machine {
@@ -295,7 +299,25 @@ class Tool {
     }
     paintImage(img, canvas) {
         const colorArr = Graphic.imageToColorArr(img);
-        const colors = Graphic.stratify(colorArr, this.palette);
+        const booleanLayersByDensity = Graphic.stratify(colorArr, this.palette);
+        const xResolution = colorArr[0].length;
+        const yResolution = colorArr.length;
+        const pixelWidth = canvas.width / xResolution;
+        const pixelHeight = canvas.height / yResolution;
+        booleanLayersByDensity.forEach(colorLayer => {
+            const pColor = colorLayer.color;
+            const colorArr = colorLayer.data;
+            colorArr.forEach((row, rowIndex) => {
+                row.forEach((cell, cellIndex) => {
+                    if (cell) {
+                        const cellX = canvas.x + (pixelWidth * cellIndex);
+                        const cellY = canvas.y + (pixelHeight * rowIndex);
+                        fill(pColor);
+                        rect(cellX, cellY, pixelWidth, pixelHeight);
+                    }
+                });
+            });
+        });
     }
 }
 let machine;
@@ -323,6 +345,7 @@ function setup() {
 function instructions() {
     tool.penDown();
     tool.toCanvas(canvas);
+    tool.paintImage(img, canvas);
 }
 function draw() {
     addPadding();

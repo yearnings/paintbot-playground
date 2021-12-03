@@ -96,6 +96,12 @@ class Graphic {
 
     // for each color in the palette, find the delta for each channel
     const deltaColors = palette.map(paletteColor => deltaColor(color(paletteColor), refColor));
+
+    // --------------------
+    // Nearest by average
+    // Highly consistent, to the point of being sterile.
+    // --------------------
+
     // then the average delta across all channels
     const averages = deltaColors.map(average);
 
@@ -103,6 +109,11 @@ class Graphic {
     const lowestDelta = Math.min(...averages);
     const targetIndex = averages.indexOf(lowestDelta);
     const nearestByAvg = palette[targetIndex];
+
+    // --------------------
+    // Nearest by closest single delta
+    // Chaotic, to the point of looking more random than artful
+    // --------------------
 
     // Another strategy... instead of avg delta, the single most encouraging delta
     const lowestNumber = (x: number[]) => Math.min(...x);
@@ -112,21 +123,40 @@ class Graphic {
     // The location in the palette corresponding to the location of the lowest channel delta
     const nearestByMin = palette[lowestSingleDeltas.indexOf(lowestSingleDelta)];
 
+    // --------------------
+    // Settle differences between algos
+    // It's critical that these be determinstic:
+    // If you try and use randomness, there's a good
+    // chance that the two colors it could be will get
+    // the other color during each of their check passes,
+    // leaving the square empty.
+    // --------------------
+    
+    // If they disagree, settle the score lazily but deterministically
+    if(nearestByMin !== nearestByAvg){
+      if(lowestSingleDelta < 10) return nearestByMin;
+    }
+
+    // Otherwise just use by avg
+    return nearestByAvg;
+    
+    
+
 
     // -------
     // Log both options when algos disagree
     // I haven't tuned or optimized this at all. Avg could be the worse algo.
     // -------
-    if (nearestByAvg !== nearestByMin) {
-      console.log('FYI: color similarity algos disagree:')
-      console.log(`%c ----`, `background: ${color}; color:${color}`);
-      console.log(`%c ----`, `background: ${nearestByAvg}; color:${nearestByAvg}`, `Nearest by average (used)`);
-      console.log(`%c ----`, `background: ${nearestByMin}; color:${nearestByMin}`, 'Nearesty by single delta');
-      console.log(`If single delta consistently picks better than average, change which algo is used.`);
-      console.log('')
-    }
+    // if (nearestByAvg !== nearestByMin) {
+    //   console.log('FYI: color similarity algos disagree:')
+    //   console.log(`%c ----`, `background: ${refColor}; color:${refColor}`);
+    //   console.log(`%c ----`, `background: ${nearestByAvg}; color:${nearestByAvg}`, `Nearest by average (used)`);
+    //   console.log(`%c ----`, `background: ${nearestByMin}; color:${nearestByMin}`, 'Nearesty by single delta');
+    //   console.log(`If single delta consistently picks better than average, change which algo is used.`);
+    //   console.log('')
+    // }
 
-    return nearestByAvg;
+    return nearestByMin;
   }
 
   /**
@@ -171,6 +201,14 @@ class Graphic {
       })
     })
 
-    return booleanLayers;
+    // For sorting by density
+    const byDensity = (a:BooleanLayer, b:BooleanLayer) => {
+      if(a.density < b.density) return -1;
+      if(a.density > b.density) return 1;
+      return 0;
+    }
+
+    // Return the densest layers earlierst in the array
+    return booleanLayers.sort(byDensity);
   }
 }
