@@ -38,6 +38,53 @@ class Graphic {
         const styleStrings = cArr.map(c => `background: ${c}; color:${c}; font-size: 10px; line-height:8px; font-family: monospace;`);
         console.log(textString, ...styleStrings);
     }
+    static nearestColor(refColor, palette) {
+        const deltaColor = (a, b) => {
+            const deltaChannel = (chFn) => Math.abs(chFn(a) - chFn(b));
+            return [
+                deltaChannel(red),
+                deltaChannel(green),
+                deltaChannel(blue)
+            ];
+        };
+        const average = (arr) => (arr.reduce((a, b) => a + b)) / arr.length;
+        const deltaColors = palette.map(paletteColor => deltaColor(color(paletteColor), refColor));
+        const averages = deltaColors.map(average);
+        const lowestDelta = Math.min(...averages);
+        const targetIndex = averages.indexOf(lowestDelta);
+        const nearestByAvg = palette[targetIndex];
+        const lowestNumber = (x) => Math.min(...x);
+        const lowestSingleDeltas = deltaColors.map(lowestNumber);
+        const lowestSingleDelta = lowestNumber(lowestSingleDeltas);
+        const nearestByMin = palette[lowestSingleDeltas.indexOf(lowestSingleDelta)];
+        if (nearestByAvg !== nearestByMin) {
+            console.log('FYI: color similarity algos disagree:');
+            console.log(`%c ----`, `background: ${color}; color:${color}`);
+            console.log(`%c ----`, `background: ${nearestByAvg}; color:${nearestByAvg}`, `Nearest by average (used)`);
+            console.log(`%c ----`, `background: ${nearestByMin}; color:${nearestByMin}`, 'Nearesty by single delta');
+            console.log(`If single delta consistently picks better than average, change which algo is used.`);
+            console.log('');
+        }
+        return nearestByAvg;
+    }
+    static stratify(imgColors, palette) {
+        const booleanLayers = [];
+        palette.forEach(pColor => {
+            const BooleanLayer = imgColors.map(row => {
+                return row.map(iColor => {
+                    return this.nearestColor(iColor, palette) == pColor;
+                });
+            });
+            const truePixels = BooleanLayer.flat().filter(i => i === true);
+            const density = truePixels.length / BooleanLayer.length;
+            booleanLayers.push({
+                color: pColor,
+                data: BooleanLayer,
+                density
+            });
+        });
+        return booleanLayers;
+    }
 }
 class Machine {
     constructor(width = 500, height = 500, gridSize = 50) {
@@ -246,34 +293,9 @@ class Tool {
         this.setCurrentPosition(0, 0);
         this.setTargetPosition(0, 0);
     }
-    selectNearestColor(refColor) {
-        const deltaColor = (a, b) => {
-            const deltaChannel = (chFn) => Math.abs(chFn(a) - chFn(b));
-            return [
-                deltaChannel(red),
-                deltaChannel(green),
-                deltaChannel(blue)
-            ];
-        };
-        const average = (arr) => (arr.reduce((a, b) => a + b)) / arr.length;
-        const deltaColors = this.palette.map(paletteColor => deltaColor(color(paletteColor), refColor));
-        const averages = deltaColors.map(average);
-        const lowestDelta = Math.min(...averages);
-        const targetIndex = averages.indexOf(lowestDelta);
-        const nearestByAvg = this.palette[targetIndex];
-        const lowestNumber = (x) => Math.min(...x);
-        const lowestSingleDeltas = deltaColors.map(lowestNumber);
-        const lowestSingleDelta = lowestNumber(lowestSingleDeltas);
-        const nearestByMin = this.palette[lowestSingleDeltas.indexOf(lowestSingleDelta)];
-        if (nearestByAvg !== nearestByMin) {
-            console.log('FYI: color similarity algos disagree:');
-            console.log(`%c ----`, `background: ${color}; color:${color}`);
-            console.log(`%c ----`, `background: ${nearestByAvg}; color:${nearestByAvg}`, `Nearest by average (used)`);
-            console.log(`%c ----`, `background: ${nearestByMin}; color:${nearestByMin}`, 'Nearesty by single delta');
-            console.log(`If single delta consistently picks better than average, change which algo is used.`);
-            console.log('');
-        }
-        return nearestByAvg;
+    paintImage(img, canvas) {
+        const colorArr = Graphic.imageToColorArr(img);
+        const colors = Graphic.stratify(colorArr, this.palette);
     }
 }
 let machine;

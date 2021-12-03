@@ -86,10 +86,7 @@ class Tool {
     // "#038C73",
     // "#D98F07",
     // "#D96704"
-  ]
-
-  /* CSS HEX */
-
+  ];
 
   // The max distance that can be traveled with each move
   private maxStep: number = 20;
@@ -374,56 +371,28 @@ class Tool {
   }
 
   /**
-   * For a single pixel's color, find the nearest
-   * color in the palette
+   * 
+   * @param colorArr 2D p5 collor array (rows x columns)
    */
-  private selectNearestColor(refColor: p5.Color){
-    // Given two colors, return an array with the delta
-    // between values in each channel of each color
-    const deltaColor = (a:p5.Color, b:p5.Color) => {
-      // Apply a color extraction fn eg `red()` and return delta
-      const deltaChannel = (chFn:Function) => Math.abs(chFn(a)-chFn(b));
-      return [
-        deltaChannel(red),
-        deltaChannel(green),
-        deltaChannel(blue)
-      ];
-    }
+  public paintImage(img: p5.Image, canvas: Canvas){
+    const colorArr = Graphic.imageToColorArr(img);
+    const colors = Graphic.stratify(colorArr, this.palette);
 
-    const average = (arr:number[]) => (arr.reduce((a,b) => a+b))/arr.length;
-
-    // for each color in the palette, find the delta for each channel
-    const deltaColors = this.palette.map(paletteColor => deltaColor(color(paletteColor), refColor));
-    // then the average delta across all channels
-    const averages = deltaColors.map(average);
     
-    // the nearest color is the one with the lowest average delta across all channels    
-    const lowestDelta = Math.min(...averages);
-    const targetIndex = averages.indexOf(lowestDelta);
-    const nearestByAvg = this.palette[targetIndex];
+    // // How many pixels tall/wide the image is
+    // const xResolution = colorArr[0].length;
+    // const yResolution = colorArr.length;
 
-    // Another strategy... instead of avg delta, the single most encouraging delta
-    const lowestNumber = (x:number[]) => Math.min(...x);
-    // the lowest delta channel for each color
-    const lowestSingleDeltas = deltaColors.map(lowestNumber);
-    const lowestSingleDelta = lowestNumber(lowestSingleDeltas);
-    // The location in the palette corresponding to the location of the lowest channel delta
-    const nearestByMin = this.palette[lowestSingleDeltas.indexOf(lowestSingleDelta)];
+    // // How big each painted pixel needs to be to fill the canvas
+    // const pixelWidth = canvas.width / xResolution;
+    // const pixelHeight = canvas.height / yResolution;
+
+    // // --------------------
+    // // Instructions
+    // // --------------------
+
+    // this.toCanvas(canvas);
 
 
-    // -------
-    // Log both options when algos disagree
-    // I haven't tuned or optimized this at all. Avg could be the worse algo.
-    // -------
-    if(nearestByAvg !== nearestByMin){
-      console.log('FYI: color similarity algos disagree:')
-      console.log(`%c ----`, `background: ${color}; color:${color}`);
-      console.log(`%c ----`, `background: ${nearestByAvg}; color:${nearestByAvg}`, `Nearest by average (used)`);
-      console.log(`%c ----`, `background: ${nearestByMin}; color:${nearestByMin}`, 'Nearesty by single delta');
-      console.log(`If single delta consistently picks better than average, change which algo is used.`);
-      console.log('')
-    }
-
-    return nearestByAvg;
   }
 }
