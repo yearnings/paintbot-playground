@@ -5,13 +5,13 @@ let canvas: Canvas;
 let img: p5.Image;
 
 function preload() {
-  img = loadImage('img/salsa_120.jpg');
+  img = loadImage('img/pika_70.png');
 }
 
 function setup() {
   // This is the global P5 renderer, not the paintbot canvas
   createCanvas(windowWidth, windowHeight);
-  rectMode("corner").noFill().frameRate(30);
+  rectMode("corner").noFill().frameRate(200);
 
   // roughly 6.5ft
   machine = new Machine(1980, 1980, 100);

@@ -153,6 +153,7 @@ class Tool {
             shape: 'ROUND',
             minWidth: 1,
             maxWidth: 10,
+            color: "#000000"
         };
         this.palette = [
             "#D0231C",
@@ -161,7 +162,7 @@ class Tool {
             "#F7D48D",
             "#1A877C"
         ];
-        this.maxStep = 20;
+        this.maxStep = 10;
         this.scale = 1;
         this.location = createVector(0, 0);
         this.target = createVector(0, 0);
@@ -169,7 +170,7 @@ class Tool {
         this.onTarget = () => (this.location.toString() == this.target.toString());
         this.drawMode = 'BOTH';
         this.actions = [];
-        this.delay = 50;
+        this.delay = 0;
         this.lastActionTime = millis();
         this.setCurrentPosition(startX, startY);
     }
@@ -244,6 +245,7 @@ class Tool {
         this.moveRelative(this.location.x + mm, this.location.y);
     }
     toCanvas(c) {
+        this.penUp();
         this.move(c.x, c.y);
     }
     drawTowards() {
@@ -257,22 +259,42 @@ class Tool {
         else {
             nextLocation = this.location.copy().add(forwardStep);
         }
+        scale(this.scale);
+        this.brushStrokeFromVectors(this.location, nextLocation);
         this.setPathLineStyle();
-        this.scaledLineFromVectors(this.location, nextLocation);
+        this.lineFromVectors(this.location, nextLocation);
         this.setCurrentPosition(nextLocation);
     }
-    scaledLineFromVectors(start, end) {
-        scale(this.scale);
+    brushStrokeFromVectors(start, end) {
+        let brushHeight = this.brushIntensity * this.brush.maxWidth;
+        let brushWidth = this.maxStep;
+        let startX = start.x;
+        let startY = start.y;
+        fill(this.brush.color);
+        noStroke();
+        rect(startX, startY, brushWidth, brushHeight);
+    }
+    lineFromVectors(start, end) {
         line(start.x, start.y, end.x, end.y);
     }
     setPathLineStyle() {
         if (this.brushIntensity > 0) {
             strokeWeight(4);
-            stroke(0, 255, 255, 100);
+            stroke(0, 255, 255, 30);
         }
         else {
             strokeWeight(2);
-            stroke(255, 0, 0, 100);
+            stroke(255, 0, 0, 30);
+        }
+    }
+    setBrushLineStyle() {
+        if (this.brushIntensity > 0) {
+            strokeWeight(this.brush.maxWidth * this.brushIntensity);
+            stroke(this.brush.color);
+        }
+        else {
+            noStroke();
+            noFill();
         }
     }
     run() {
@@ -303,19 +325,57 @@ class Tool {
         const xResolution = colorArr[0].length;
         const yResolution = colorArr.length;
         const pixelWidth = canvas.width / xResolution;
+        this.maxStep = pixelWidth;
         const pixelHeight = canvas.height / yResolution;
+        this.toCanvas(canvas);
         booleanLayersByDensity.forEach(colorLayer => {
             const pColor = colorLayer.color;
+            this.changeBrush({
+                color: pColor,
+                minWidth: pixelWidth,
+                maxWidth: pixelWidth,
+                minHeight: pixelHeight,
+                maxHeight: pixelHeight
+            });
+            const padding = 4;
             const colorArr = colorLayer.data;
+            const strokePaths = [];
+            let penDown = false;
+            let startVector;
+            let endVector;
             colorArr.forEach((row, rowIndex) => {
                 row.forEach((cell, cellIndex) => {
+                    const isLastCol = cellIndex < (row.length - 1);
+                    const isLastRow = rowIndex < (colorArr.length - 1);
+                    const lookAheadH = !isLastCol ? row[cellIndex + 1] : false;
+                    const nextRow = !isLastRow ? colorArr[rowIndex + 1] : undefined;
+                    let lookAheadV = false;
+                    if (nextRow)
+                        lookAheadV = nextRow[cellIndex];
+                    const cellX = canvas.x + (pixelWidth * cellIndex);
+                    const cellY = canvas.y + (pixelHeight * rowIndex);
                     if (cell) {
-                        const cellX = canvas.x + (pixelWidth * cellIndex);
-                        const cellY = canvas.y + (pixelHeight * rowIndex);
-                        fill(pColor);
-                        rect(cellX, cellY, pixelWidth, pixelHeight);
+                        if (!penDown) {
+                            startVector = createVector(cellX, cellY);
+                            penDown = true;
+                        }
+                    }
+                    if (!lookAheadH) {
+                        if (penDown) {
+                            endVector = createVector(cellX + pixelWidth, cellY);
+                            penDown = false;
+                            strokePaths.push([startVector.copy(), endVector.copy()]);
+                            startVector = createVector(0, 0);
+                            endVector = createVector(0, 0);
+                        }
                     }
                 });
+            });
+            strokePaths.forEach(lineVector => {
+                this.penUp();
+                this.move(lineVector[0].x, lineVector[0].y);
+                this.penDown();
+                this.move(lineVector[1].x, lineVector[1].y);
             });
         });
     }
@@ -325,11 +385,11 @@ let tool;
 let canvas;
 let img;
 function preload() {
-    img = loadImage('img/salsa_120.jpg');
+    img = loadImage('img/pika_70.png');
 }
 function setup() {
     createCanvas(windowWidth, windowHeight);
-    rectMode("corner").noFill().frameRate(30);
+    rectMode("corner").noFill().frameRate(200);
     machine = new Machine(1980, 1980, 100);
     tool = machine.tool;
     canvas = machine.addCanvas({

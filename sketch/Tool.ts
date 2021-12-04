@@ -24,11 +24,13 @@ type Brush = {
   shape: 'ROUND' | 'RECT',
   minWidth: number,
   maxWidth: number,
+  color: string,
   angle?: number
 } | {
   shape: 'ROUND' | 'RECT',
   minWidth: number,
   maxWidth: number,
+  color: string,
   angle?: number,
   minHeight?: number,
   maxHeight?: number
@@ -68,6 +70,7 @@ class Tool {
     shape: 'ROUND',
     minWidth: 1,
     maxWidth: 10,
+    color: "#000000"
   }
   // via
   // https://color.adobe.com/create/image
@@ -89,7 +92,7 @@ class Tool {
   ];
 
   // The max distance that can be traveled with each move
-  private maxStep: number = 20;
+  private maxStep: number = 10;
   public set stepSize(mm:number){
     this.maxStep = mm;
   }
@@ -144,7 +147,7 @@ class Tool {
   private actions:ActionQueue = [];
   
   // How long to wait between queued actions
-  private delay: number = 50;
+  private delay: number = 0;
   public set speed(ms:number){ this.delay = ms; }
 
   // Time in MS when the last queued action occured
@@ -249,6 +252,7 @@ class Tool {
    * Move the tool to the origin (top left) of a given canvas;
    */
   public toCanvas(c:Canvas){
+    this.penUp();
     this.move(c.x, c.y);
   }
 
@@ -279,20 +283,37 @@ class Tool {
     } else {
       nextLocation = this.location.copy().add(forwardStep);
     }
+    scale(this.scale);
+
+    // this.setBrushLineStyle();
+    // this.lineFromVectors(this.location, nextLocation);
+    this.brushStrokeFromVectors(this.location, nextLocation);
 
     this.setPathLineStyle();
-    this.scaledLineFromVectors(this.location, nextLocation);
+    this.lineFromVectors(this.location, nextLocation);
     
     // Update the current position
     this.setCurrentPosition(nextLocation);
+  }
+
+  private brushStrokeFromVectors(start: p5.Vector, end: p5.Vector){
+    
+    let brushHeight = this.brushIntensity * this.brush.maxWidth;
+    let brushWidth = this.maxStep;
+    let startX = start.x; // + (brushWidth/2);
+    let startY = start.y; // + (brushHeight/2);
+    // let endX = end.x + (brushWidth / 2);
+    // let endY = end.y + (brushHeight / 2);
+    fill(this.brush.color);
+    noStroke();
+    rect(startX, startY, brushWidth, brushHeight);
   }
 
   /**
    * Draw a line between two vectors, adjusting scale
    * to account for window / renderer resizing.
    */
-  private scaledLineFromVectors(start: p5.Vector, end: p5.Vector){
-    scale(this.scale);
+  private lineFromVectors(start: p5.Vector, end: p5.Vector){
     line(start.x, start.y, end.x, end.y);
   }
 
@@ -305,12 +326,24 @@ class Tool {
     // Set and apply the stroke weight + weight-dependent dash pattern
     if (this.brushIntensity > 0) {
       strokeWeight(4);
-      stroke(0, 255, 255, 100)
+      stroke(0, 255, 255, 30)
       
     } else {
       strokeWeight(2);
-      stroke(255, 0, 0, 100)
+      stroke(255, 0, 0, 30)
     } 
+  }
+
+  private setBrushLineStyle() {
+    // Set and apply the stroke weight + weight-dependent dash pattern
+    if (this.brushIntensity > 0) {
+      strokeWeight(this.brush.maxWidth*this.brushIntensity);
+      stroke(this.brush.color);
+
+    } else {
+      noStroke();
+      noFill()
+    }
   }
 
   /**
@@ -384,31 +417,84 @@ class Tool {
 
     // How big each painted pixel needs to be to fill the canvas
     const pixelWidth = canvas.width / xResolution;
+    // Constrain step to pixel witdth
+    this.maxStep = pixelWidth;
     const pixelHeight = canvas.height / yResolution;
 
     // // --------------------
     // // Instructions
     // // --------------------
 
-    // Gonna straight up draw rects right now for speed.
+    this.toCanvas(canvas);
+
     booleanLayersByDensity.forEach(colorLayer => {
+      // Change brush
       const pColor = colorLayer.color;
+      // Set brush color, with
+      // size based on pixel width
+      this.changeBrush({
+        color: pColor,
+        minWidth: pixelWidth,
+        maxWidth: pixelWidth,
+        minHeight: pixelHeight,
+        maxHeight: pixelHeight
+      })
+
+      const padding = 4;
       const colorArr = colorLayer.data;
+      type StrokePath = [from:p5.Vector, to:p5.Vector];
+      const strokePaths:StrokePath[] = [];
+
+      let penDown = false;
+      let startVector:p5.Vector;
+      let endVector:p5.Vector;
+
       colorArr.forEach((row, rowIndex) => {
         // const boolRowToColor = row.map(bool => bool ? pColor : '#ffffff').map(str => color(str));
         row.forEach((cell, cellIndex) => {
-          if(cell) {
-            const cellX = canvas.x + (pixelWidth * cellIndex);
-            const cellY = canvas.y + (pixelHeight * rowIndex);
-            fill(pColor);
-            rect(cellX,cellY,pixelWidth, pixelHeight);
+          const isLastCol = cellIndex < (row.length - 1);
+          const isLastRow = rowIndex < (colorArr.length - 1);
+          // // The cell to the right of this one
+          const lookAheadH =  !isLastCol ? row[cellIndex + 1] : false;
+          // // The cell below this one -- not used while I only support horizontal mode first
+          const nextRow = !isLastRow ? colorArr[rowIndex + 1] : undefined;
+          let lookAheadV = false;
+          if(nextRow) lookAheadV = nextRow[cellIndex];
+
+
+          const cellX = canvas.x + (pixelWidth * cellIndex);
+          const cellY = canvas.y + (pixelHeight * rowIndex);
+
+          // if this cell should be filled
+          if(cell){
+            if(!penDown){
+              startVector = createVector(cellX, cellY);
+              penDown=true;
+            }
+          // If this cell should be empty
+          }
+
+          if(!lookAheadH){
+            if (penDown) {
+              endVector = createVector(cellX+pixelWidth, cellY);
+              penDown = false;
+              // Push & reset
+              strokePaths.push([startVector.copy(), endVector.copy()]);
+              startVector = createVector(0,0);
+              endVector = createVector(0,0);
+            }
           }
         })
-        // Graphic.logColorRow(boolRowToColor);
+      })
+
+      // console.log(strokePaths);
+      strokePaths.forEach(lineVector => {
+        this.penUp();
+        this.move(lineVector[0].x, lineVector[0].y);
+        this.penDown();
+        this.move(lineVector[1].x, lineVector[1].y);
       })
     });
-
-    // this.toCanvas(canvas);
 
 
   }
