@@ -334,18 +334,6 @@ class Tool {
     } 
   }
 
-  private setBrushLineStyle() {
-    // Set and apply the stroke weight + weight-dependent dash pattern
-    if (this.brushIntensity > 0) {
-      strokeWeight(this.brush.maxWidth*this.brushIntensity);
-      stroke(this.brush.color);
-
-    } else {
-      noStroke();
-      noFill()
-    }
-  }
-
   /**
    * When in timed/animated mode, call run() inside draw() to
    * move the clock forward one tick, executing timed actions.

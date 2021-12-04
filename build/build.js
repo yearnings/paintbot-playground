@@ -287,16 +287,6 @@ class Tool {
             stroke(255, 0, 0, 30);
         }
     }
-    setBrushLineStyle() {
-        if (this.brushIntensity > 0) {
-            strokeWeight(this.brush.maxWidth * this.brushIntensity);
-            stroke(this.brush.color);
-        }
-        else {
-            noStroke();
-            noFill();
-        }
-    }
     run() {
         const now = millis();
         const hasBeenLongEnough = now - this.lastActionTime >= this.delay;
