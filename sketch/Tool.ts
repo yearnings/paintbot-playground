@@ -391,6 +391,65 @@ class Tool {
     this.setTargetPosition(0,0);
   }
 
+// 
+// 
+//      .d8888b. 88888888888 Y88b   d88P 888      8888888888 .d8888b.  
+//     d88P  Y88b    888      Y88b d88P  888      888       d88P  Y88b 
+//     Y88b.         888       Y88o88P   888      888       Y88b.      
+//      "Y888b.      888        Y888P    888      8888888    "Y888b.   
+//         "Y88b.    888         888     888      888           "Y88b. 
+//           "888    888         888     888      888             "888 
+//     Y88b  d88P    888         888     888      888       Y88b  d88P 
+//      "Y8888P"     888         888     88888888 8888888888 "Y8888P"  
+// 
+// ====================
+// Large processes that draw artfully
+// ====================
+// 
+
+  /**
+   * The simplest possible take on the plottertwitter standard:
+   * A black background with white lines slightly twisting in space
+   */
+  public basicLinearBlinds(canvas: Canvas){
+    const padding = 20;
+    // A black background fill, slightly inset.
+    fill(20);
+    noStroke();
+    rect(
+      canvas.x+padding, 
+      canvas.y+padding,
+      canvas.width - (padding*2),
+      canvas.height - (padding*2)
+    );
+
+    
+
+    const lineInterval = padding*2;
+    const lineXstart = canvas.x + (padding * 2);
+    const lineXend = canvas.x + canvas.width - (padding * 2);
+    // Start padded inside the black background
+    let lineYLeft = canvas.y + (padding * 2); // moves
+    let lineYRight = canvas.y + (padding * 2); // moves
+    let lineYCutoff = canvas.y + canvas.height - (padding * 2);
+    [...Array(31)].forEach(_ => {
+      noFill();
+      stroke(200);
+      strokeWeight(4);
+      line(lineXstart, lineYLeft, lineXend, lineYRight);
+      const randomLeft = (lineInterval * (Math.random())) + (lineInterval * 0.420);
+      const randomRight = (lineInterval * (Math.random())) + (lineInterval * 0.469);
+      lineYLeft = Math.min(lineYLeft + randomLeft, lineYCutoff);
+      lineYRight = Math.min(lineYRight + randomRight, lineYCutoff);
+
+      // Not doing real tool moevemnt yet
+      // this.penUp();
+    })
+    
+  }
+                                                                
+                                                                
+
   /**
    * 
    * @param colorArr 2D p5 collor array (rows x columns)
@@ -486,4 +545,6 @@ class Tool {
 
 
   }
+
+
 }

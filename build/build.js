@@ -309,6 +309,28 @@ class Tool {
         this.setCurrentPosition(0, 0);
         this.setTargetPosition(0, 0);
     }
+    basicLinearBlinds(canvas) {
+        const padding = 20;
+        fill(20);
+        noStroke();
+        rect(canvas.x + padding, canvas.y + padding, canvas.width - (padding * 2), canvas.height - (padding * 2));
+        const lineInterval = padding * 2;
+        const lineXstart = canvas.x + (padding * 2);
+        const lineXend = canvas.x + canvas.width - (padding * 2);
+        let lineYLeft = canvas.y + (padding * 2);
+        let lineYRight = canvas.y + (padding * 2);
+        let lineYCutoff = canvas.y + canvas.height - (padding * 2);
+        [...Array(31)].forEach(_ => {
+            noFill();
+            stroke(200);
+            strokeWeight(4);
+            line(lineXstart, lineYLeft, lineXend, lineYRight);
+            const randomLeft = (lineInterval * (Math.random())) + (lineInterval * 0.420);
+            const randomRight = (lineInterval * (Math.random())) + (lineInterval * 0.469);
+            lineYLeft = Math.min(lineYLeft + randomLeft, lineYCutoff);
+            lineYRight = Math.min(lineYRight + randomRight, lineYCutoff);
+        });
+    }
     paintImage(img, canvas) {
         const colorArr = Graphic.imageToColorArr(img);
         const booleanLayersByDensity = Graphic.stratify(colorArr, this.palette);
@@ -382,12 +404,12 @@ function setup() {
     rectMode("corner").noFill().frameRate(200);
     machine = new Machine(1980, 1980, 100);
     tool = machine.tool;
+    addPadding();
+    const scale = scaleToWindow();
     canvas = machine.addCanvas({
         width: 1220,
         height: 1220
     }, 200, 200);
-    addPadding();
-    scaleToWindow();
     machine.render();
     instructions();
     image(img, 50, 50);
@@ -395,7 +417,7 @@ function setup() {
 function instructions() {
     tool.penDown();
     tool.toCanvas(canvas);
-    tool.paintImage(img, canvas);
+    tool.basicLinearBlinds(canvas);
 }
 function draw() {
     addPadding();
@@ -429,5 +451,6 @@ function scaleToWindow() {
     }
     scale(useScale, useScale);
     tool.scale = useScale;
+    return scale;
 }
 //# sourceMappingURL=build.js.map

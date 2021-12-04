@@ -16,15 +16,15 @@ function setup() {
   // roughly 6.5ft
   machine = new Machine(1980, 1980, 100);
   tool = machine.tool;
-  
+
+  addPadding();
+  const scale = scaleToWindow();
+
   // A 4ft paintbot canvas, inset 200mm
   canvas = machine.addCanvas({
     width: 1220,
     height: 1220
   }, 200, 200);
-
-  addPadding();
-  scaleToWindow();
   
   machine.render();
   instructions();
@@ -41,7 +41,8 @@ function setup() {
 function instructions() {
   tool.penDown();
   tool.toCanvas(canvas);
-  tool.paintImage(img, canvas);
+  // tool.paintImage(img, canvas);
+  tool.basicLinearBlinds(canvas);
 }
 
 function draw() {
@@ -96,4 +97,5 @@ function scaleToWindow(){
 
   scale(useScale, useScale);
   tool.scale = useScale;
+  return scale;
 }
