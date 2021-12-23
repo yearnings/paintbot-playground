@@ -279,12 +279,12 @@ class Tool {
     }
     setPathLineStyle() {
         if (this.brushIntensity > 0) {
-            strokeWeight(4);
-            stroke(0, 255, 255, 30);
+            strokeWeight(1);
+            stroke(0, 255, 255, 40);
         }
         else {
             strokeWeight(2);
-            stroke(255, 0, 0, 30);
+            stroke(255, 0, 0, 40);
         }
     }
     run() {
@@ -311,6 +311,7 @@ class Tool {
     }
     basicLinearBlinds(canvas) {
         const padding = 20;
+        let flipDir = true;
         fill(20);
         noStroke();
         rect(canvas.x + padding, canvas.y + padding, canvas.width - (padding * 2), canvas.height - (padding * 2));
@@ -320,11 +321,21 @@ class Tool {
         let lineYLeft = canvas.y + (padding * 2);
         let lineYRight = canvas.y + (padding * 2);
         let lineYCutoff = canvas.y + canvas.height - (padding * 2);
+        this.changeBrush({
+            minWidth: 4,
+            maxWidth: 4,
+            color: "ffffff"
+        });
         [...Array(31)].forEach(_ => {
-            noFill();
-            stroke(200);
-            strokeWeight(4);
-            line(lineXstart, lineYLeft, lineXend, lineYRight);
+            let startX = flipDir ? lineXstart : lineXend;
+            let endX = !flipDir ? lineXstart : lineXend;
+            let leftY = flipDir ? lineYLeft : lineYRight;
+            let rightY = !flipDir ? lineYLeft : lineYRight;
+            this.penUp();
+            this.move(startX, leftY);
+            this.penDown();
+            this.move(endX, rightY);
+            flipDir = !flipDir;
             const randomLeft = (lineInterval * (Math.random())) + (lineInterval * 0.420);
             const randomRight = (lineInterval * (Math.random())) + (lineInterval * 0.469);
             lineYLeft = Math.min(lineYLeft + randomLeft, lineYCutoff);
@@ -390,6 +401,12 @@ class Tool {
                 this.move(lineVector[1].x, lineVector[1].y);
             });
         });
+    }
+    noisyLines(canvas) {
+        this.toCanvas(canvas);
+        let x;
+        let y;
+        let r = 120;
     }
 }
 let machine;
