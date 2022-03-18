@@ -13,12 +13,18 @@ class Graphic {
         img.loadPixels();
         return img.pixels;
     }
-    static numArrToColorArr(pixelData) {
+    static numArrToColorArr(pixelData, toGrayscale = false) {
         const mutablePixels = [...pixelData];
         const mutablePixelColors = [...Array(pixelData.length)].map(() => {
             const [r, g, b, a] = mutablePixels.splice(0, 4);
             const colorFromNumbers = color(r, g, b, a);
-            return colorFromNumbers;
+            if (toGrayscale) {
+                return this.rgbToGrayscale(colorFromNumbers);
+            }
+            else {
+                return colorFromNumbers;
+            }
+            ;
         });
         const pixelRows = [...Array(img.width)].map(() => {
             const rowColors = mutablePixelColors.splice(0, img.width);
@@ -26,9 +32,17 @@ class Graphic {
         });
         return pixelRows;
     }
-    static imageToColorArr(img) {
-        const pixels = this.pixelsForImage(img);
-        return this.numArrToColorArr(pixels);
+    static rgbToGrayscale(rgbColor) {
+        let sum = 0;
+        let rgba = rgbColor.toString().match(/[0-9\.]+/g).map(x => Number(x));
+        sum += (rgba[0] * 0.89);
+        sum += (rgba[1] * 1.77);
+        sum += (rgba[2] * 0.33);
+        return color(Math.ceil(sum / 3));
+    }
+    static imageToColorArr(img, toGrayscale = false) {
+        let pixels = this.pixelsForImage(img);
+        return this.numArrToColorArr(pixels, toGrayscale);
     }
     static logSwatch(color, msg) {
         console.log([`%c---`, `background: ${color}; color:${color}`], msg || '');
@@ -309,6 +323,28 @@ class Tool {
         this.setCurrentPosition(0, 0);
         this.setTargetPosition(0, 0);
     }
+    grayscaleDensityPixels(img, canvas) {
+        const colorArr = Graphic.imageToColorArr(img, true);
+        const padding = 20;
+        fill(200);
+        noStroke();
+        rect(canvas.x + padding, canvas.y + padding, canvas.width - (padding * 2), canvas.height - (padding * 2));
+        const xResolution = colorArr[0].length;
+        const yResolution = colorArr.length;
+        const pixelWidth = canvas.width / xResolution;
+        const pixelHeight = canvas.height / yResolution;
+        colorArr.forEach((row, rowIndex) => {
+            row.forEach((color, cellIndex) => {
+                const grayColor = Number(color.toString().split('(')[1].split(',')[0]);
+                const cellDensity = map(grayColor, 0, 255, 0, 5);
+                const cellTopLeftX = (rowIndex * pixelWidth) + canvas.x + padding;
+                const cellTopLeftY = (cellIndex * pixelHeight) + canvas.y + padding;
+                this.penUp();
+                this.move(cellTopLeftX, cellTopLeftY);
+                this.penDown();
+            });
+        });
+    }
     basicLinearBlinds(canvas) {
         const padding = 20;
         let flipDir = true;
@@ -414,7 +450,7 @@ let tool;
 let canvas;
 let img;
 function preload() {
-    img = loadImage('img/pika_70.png');
+    img = loadImage('img/mona_50.png');
 }
 function setup() {
     createCanvas(windowWidth, windowHeight);
@@ -434,7 +470,8 @@ function setup() {
 function instructions() {
     tool.penDown();
     tool.toCanvas(canvas);
-    tool.basicLinearBlinds(canvas);
+    tool.paintImage(img, canvas);
+    tool.grayscaleDensityPixels(img, canvas);
 }
 function draw() {
     addPadding();

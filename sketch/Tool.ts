@@ -408,6 +408,57 @@ class Tool {
 // 
 
   /**
+   * Draw a grayscale image as a series of squares with various
+   * infill densities to represent darker values.
+   */
+  public grayscaleDensityPixels(img: p5.Image, canvas: Canvas){
+    const colorArr = Graphic.imageToColorArr(img, true);
+
+    const padding = 20;
+
+    // A gray background fill, slightly inset.
+    fill(200);
+    noStroke();
+    rect(
+      canvas.x + padding,
+      canvas.y + padding,
+      canvas.width - (padding * 2),
+      canvas.height - (padding * 2)
+    );
+
+    // How many pixels tall/wide the image is
+    const xResolution = colorArr[0].length;
+    const yResolution = colorArr.length;
+
+    // How big each painted pixel needs to be to fill the canvas
+    const pixelWidth = canvas.width / xResolution;
+    const pixelHeight = canvas.height / yResolution;
+
+
+    colorArr.forEach((row, rowIndex) => {
+      row.forEach((color, cellIndex) => {
+
+        // The number of lines to be drawn in this cell
+        // Extract the gray color
+        const grayColor = Number(color.toString().split('(')[1].split(',')[0]);
+        // Map it from 255 val to 0-5
+        const cellDensity = map(grayColor,0,255,0,5);
+        
+        const cellTopLeftX = (rowIndex * pixelWidth) + canvas.x + padding;
+        const cellTopLeftY = (cellIndex * pixelHeight) + canvas.y + padding;
+        this.penUp();
+        // Move to location
+        this.move(cellTopLeftX, cellTopLeftY);
+        this.penDown();
+        // Draw lines to create the correct density
+        // this.move(endX, rightY);
+      })
+      
+    });
+
+  }
+
+  /**
    * The simplest possible take on the plottertwitter standard:
    * A black background with white lines slightly twisting in space
    */
@@ -471,8 +522,7 @@ class Tool {
     })
     
   }
-                                                                
-                                                                
+                                                                                                                             
 
   /**
    * 
@@ -573,6 +623,7 @@ class Tool {
   /**
    * Basic lines with perlin noise
    * https://gist.github.com/anonymous/ef0d0cb16777aa9c5af5
+   * https://old.reddit.com/r/processing/comments/jhmr3x/grid_distortion/
    */
   public noisyLines(canvas:Canvas){
     this.toCanvas(canvas);

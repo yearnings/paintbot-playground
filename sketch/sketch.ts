@@ -5,7 +5,7 @@ let canvas: Canvas;
 let img: p5.Image;
 
 function preload() {
-  img = loadImage('img/pika_70.png');
+  img = loadImage('img/mona_50.png');
 }
 
 function setup() {
@@ -41,8 +41,9 @@ function setup() {
 function instructions() {
   tool.penDown();
   tool.toCanvas(canvas);
-  // tool.paintImage(img, canvas);
-  tool.basicLinearBlinds(canvas);
+  tool.paintImage(img, canvas);
+  // tool.basicLinearBlinds(canvas);
+  tool.grayscaleDensityPixels(img, canvas);
 }
 
 function draw() {

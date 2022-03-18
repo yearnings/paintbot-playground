@@ -17,7 +17,7 @@ class Graphic {
    * (1d number[], 4 channels in a pile)
    * into a 2D color array (rows x cols)
    */
-  public static numArrToColorArr(pixelData: number[]){
+  public static numArrToColorArr(pixelData: number[], toGrayscale:boolean = false){
     // Spread the pixel array into a mutable clone because
     // we're gonna splice values off of it repeatedly, and
     // don't want to disturb the actual pixel array.
@@ -29,7 +29,13 @@ class Graphic {
       // Shave the first 4 elements off the mutable array
       const [r, g, b, a] = mutablePixels.splice(0, 4);
       const colorFromNumbers = color(r, g, b, a);
-      return colorFromNumbers;
+      
+      // Return grayscale or RGB
+      if(toGrayscale) {
+        return this.rgbToGrayscale(colorFromNumbers)
+      } else {
+        return colorFromNumbers;
+      };
     });
 
     // Break the flat array of colors into separate rows
@@ -45,12 +51,26 @@ class Graphic {
   }
 
   /**
+   * Convert a given color to grayscale with the luminance method
+   * https://tabreturn.github.io/code/html/javascript/2017/01/26/converting_css_colour_to_greyscale.html
+   */
+  public static rgbToGrayscale(rgbColor: p5.Color){
+    let sum = 0;
+    let rgba = rgbColor.toString().match(/[0-9\.]+/g).map(x => Number(x));
+    sum += (rgba[0] * 0.89);
+    sum += (rgba[1] * 1.77);
+    sum += (rgba[2] * 0.33);
+
+    return color(Math.ceil(sum / 3));
+  }
+
+  /**
    * Given a p5.Image (which can be unloaded),
    * load pixels, convert to color array, return.
    */
-  public static imageToColorArr(img: p5.Image){
-    const pixels = this.pixelsForImage(img);
-    return this.numArrToColorArr(pixels);
+  public static imageToColorArr(img: p5.Image, toGrayscale: boolean = false){
+    let pixels = this.pixelsForImage(img);
+    return this.numArrToColorArr(pixels, toGrayscale);
   }
 
   /**
